@@ -599,13 +599,61 @@ Revisit deliberately when the EU is worth serving. Never drift into it.
 
 The resident-director requirement makes Australia impractical while operating from Thailand without paying for a nominee. **Revisit if the founder becomes Australian-resident** (a masters place from September 2027 would qualify).
 
-### Decision: 16+, not 18+
+### Decision: 18+ globally
 
-A large share of IELTS Academic candidates are 17, applying to universities — excluding them would cost a real segment. 16+ matches IELTS's own recommended minimum age, sits above the UK's consent age of 13, and avoids COPPA (US, under 13) entirely.
+*A 16+ threshold was considered and rejected once India's law was checked.*
 
-The UK Age Appropriate Design Code applies to 16–17 year olds, but its requirements — high privacy defaults, data minimisation, clear language, **no nudge techniques or dark patterns** — are already committed to under Quality bar 6. Compliance is achieved by having built it properly.
+**India's DPDP Act 2023 makes 16+ unworkable in the largest market:**
 
-Enforced by a real date-of-birth field at signup, not a checkbox.
+- A "child" is anyone **under 18** — stricter than GDPR (13–16) or COPPA (13)
+- Consent must be **verifiable parental consent**; a checkbox is explicitly insufficient
+- The Act **expressly prohibits tracking, monitoring, targeted advertising and profiling of children**
+- It applies **extraterritorially** to any foreign company offering services to people in India, with no local entity required
+- Penalties reach ₹250 crore (~$30M)
+
+The prohibition is decisive. **The skill graph is a profile** — it models each learner's ability and automatically determines what they see. For under-18s in India that is banned outright, and consent cannot authorise it because it is a prohibition rather than a consent requirement. **There is no lawful version of this product for an Indian minor.**
+
+**Per-country age gates were considered and rejected.** Residence cannot be verified, IP and billing address are both spoofable, age would have to propagate into every profiling decision permanently, and the asymmetry is bad: the upside is a few 17-year-old signups, the downside is prohibited profiling of a child in the largest market.
+
+**Competitive evidence supports 18+:**
+
+| Service | Minimum age | Model |
+|---|---|---|
+| Cambly (closest comparable paid service) | **18** | Separate Cambly Kids with verifiable consent |
+| Duolingo | 13 | Free, gamified, separate Kids/ABC product; does not verify age |
+| ELSA Speak | 13 | "13–18 with parental permission" — a request, not verification |
+| **IELTS itself** | 16 recommended | **Parental consent form required for under-18 candidates** |
+
+Cambly — a paid, adult-oriented English service — uses precisely this split. Duolingo and ELSA go lower but are free or gamified, run dedicated children's products alongside, and are arguably non-compliant in India at a scale where they can absorb the risk.
+
+Most tellingly, IELTS already requires a parent's consent form from under-18 candidates, so 18+ on a preparation tool matches the ecosystem rather than departing from it.
+
+**Enforced by a real date-of-birth field at signup, not a checkbox.**
+
+**What is lost:** 17-year-old university applicants — a genuine cost, though largely deferral rather than loss, since they turn 18 during the application cycle.
+
+**What is not lost:** school-age learners were never this product. Serving them requires a parent buyer, an oversight dashboard, age-appropriate content, and gamification that Quality bar 6 prohibits. That is a separate product and a deliberate future decision, exactly as Duolingo and Cambly both concluded — never a lowered number on this one.
+
+### Accessibility is a legal duty, not only a quality standard
+
+The **UK Equality Act 2010** requires reasonable adjustments for disabled users of services. Quality bar 7 already commits to accessibility; this records that it is additionally a legal obligation wherever UK customers are served.
+
+### Markets served — one privacy layer covers them all
+
+| Market | Law | Applies extraterritorially? |
+|---|---|---|
+| India | DPDP Act 2023 | **Yes** |
+| Philippines | Data Privacy Act 2012 | Yes |
+| Vietnam | Decree 13 / PDPL | **Yes** |
+| Nigeria | NDPA 2023 | Yes |
+| UK | UK GDPR | Yes (UK controller) |
+| US | State laws + COPPA | Mostly below thresholds initially |
+| Canada, Australia | PIPEDA / Privacy Act | Yes if served |
+| Pakistan, Bangladesh | Developing | Monitor |
+
+Every one of these requires substantially the same six things: tell people what is collected, obtain proper consent, allow access, allow correction, allow deletion, and notify breaches.
+
+**Working principle: build to India's standard and the rest follow.** India is the strictest of the served markets on age and children's data, so meeting it clears the others. One privacy layer, one age gate, one deletion flow — not nine compliance systems.
 
 ### Decision: voice processed for assessment only, never identification
 
@@ -637,7 +685,7 @@ The honest-ranges standard (Quality bar, §3.5) was a pedagogical decision. It i
 
 ### Compliance checklist
 
-**In code:** provenance per asset · source whitelist enforced · 16+ date-of-birth gate · deletion and export endpoints · audio retention job · scores as ranges with confidence · auto-generated attributions page.
+**In code:** provenance per asset · source whitelist enforced · **18+ date-of-birth gate** · deletion and export endpoints · audio retention job · scores as ranges with confidence · auto-generated attributions page · accessibility to standard (Equality Act duty, not only quality).
 
 **At launch:** EU/EEA geo-block · Paddle as MoR · ICO registration (~£50/yr) · processor agreements with Turso, Vercel, Cloudflare, ElevenLabs and LLM providers.
 
