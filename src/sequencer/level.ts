@@ -8,8 +8,19 @@ import { MASTERY_THRESHOLD } from './eligibility'
  *
  * Reported per skill and never blended into one number. A learner who reads at
  * B2 and speaks at A2 is completely normal, and a single averaged "B1" would
- * hide the exact thing they most need to see. The dashboard depends on this
- * distinction.
+ * hide the exact thing they most need to see.
+ *
+ * The hard part is not the arithmetic — it is distinguishing three states that
+ * look similar and mean very different things:
+ *
+ *   1. The learner has not mastered this level yet       → a real ceiling
+ *   2. This level has no authored content                → our limitation
+ *   3. The learner has mastered everything that exists   → the content ceiling
+ *
+ * Conflating any two of these produces a dishonest number. Treating an empty
+ * level as "covered" promotes beginners to C2. Treating it as "not covered"
+ * tells a learner who has finished everything available that they are making
+ * no progress. Both have been implemented here; neither was acceptable.
  */
 
 /**
@@ -23,10 +34,23 @@ const COVERAGE_TO_PROMOTE = 0.8
 
 export interface LevelEstimate {
   skill: SkillArea
-  /** The highest level fully attained. */
+
+  /** Highest level attained, judged only on levels that have content. */
   level: CefrLevel
-  /** Progress through the level immediately above `level`, 0..1. */
+
+  /**
+   * The next level above `level` that has authored content, or null when
+   * nothing exists above it. Null is the honest signal that the learner has
+   * run out of material rather than run out of ability.
+   */
+  nextLevel: CefrLevel | null
+
+  /** Progress through `nextLevel`, 0..1. Zero when `nextLevel` is null. */
   coverage: number
+
+  /** True when the learner has mastered everything authored for this skill. */
+  atContentCeiling: boolean
+
   /** Mean confidence across this skill's assessed nodes, 0..1. */
   confidence: number
 }
@@ -44,7 +68,7 @@ export function estimateLevels(
     confidenceById.set(record.nodeId, record.confidence)
   }
 
-  // Group nodes by skill — each skill gets its own independent estimate.
+  // Each skill gets an entirely independent estimate.
   const bySkill = new Map<SkillArea, SkillNode[]>()
   for (const node of nodes) {
     const list = bySkill.get(node.skill) ?? []
@@ -55,21 +79,17 @@ export function estimateLevels(
   const estimates: LevelEstimate[] = []
 
   for (const [skill, skillNodes] of bySkill) {
-    // How much of each level this learner has mastered.
+    // Per level: how many nodes exist, and what share are mastered.
+    // `hasContent` is tracked separately from coverage precisely so the two
+    // are never confused.
+    const hasContent = new Map<CefrLevel, boolean>()
     const coverageByLevel = new Map<CefrLevel, number>()
 
     for (const level of CEFR_LEVELS) {
       const atLevel = skillNodes.filter((n) => n.level === level)
+      hasContent.set(level, atLevel.length > 0)
 
       if (atLevel.length === 0) {
-        // No content authored at this level, so there is no evidence either
-        // way. Coverage 0 stops the walk below, which means a learner is never
-        // credited with a level we cannot actually assess.
-        //
-        // The alternative — treating an empty level as covered — promotes a
-        // learner straight through every unauthored level above them. During
-        // early releases, when only the lower levels exist, that would put
-        // an A1 learner at C2.
         coverageByLevel.set(level, 0)
         continue
       }
@@ -78,26 +98,30 @@ export function estimateLevels(
       coverageByLevel.set(level, mastered.length / atLevel.length)
     }
 
-    // Walk upward from A1 and stop at the first level not covered. Levels are
-    // cumulative: mastering B1 content while A1 is full of gaps does not make
-    // someone B1, it makes them a preA1 learner with patchy knowledge.
+    // Walk upward. Empty levels are transparent: they neither promote the
+    // learner nor stop the walk, because they carry no evidence either way.
+    // Only a level that *has* content and is *not* mastered is a real ceiling.
     let attained: CefrLevel = 'preA1'
+
     for (const level of CEFR_LEVELS) {
       if (level === 'preA1') continue // Everyone starts here by definition.
+      if (!hasContent.get(level)) continue // Nothing to judge — skip, don't credit.
 
       if ((coverageByLevel.get(level) ?? 0) >= COVERAGE_TO_PROMOTE) {
         attained = level
       } else {
-        break
+        break // Genuine ceiling: content exists and it is not mastered.
       }
     }
 
-    // Progress toward the next level, which is what the dashboard shows as
-    // "how far to go".
-    const nextLevel = CEFR_LEVELS[levelIndex(attained) + 1]
-    const coverage = nextLevel ? (coverageByLevel.get(nextLevel) ?? 0) : 1
+    // The next level the learner can actually work on — skipping any empty
+    // levels above them, since those offer nothing to do.
+    const nextLevel =
+      CEFR_LEVELS.slice(levelIndex(attained) + 1).find((l) => hasContent.get(l)) ?? null
 
-    // Mean confidence over assessed nodes only — averaging in untouched nodes
+    const coverage = nextLevel ? (coverageByLevel.get(nextLevel) ?? 0) : 0
+
+    // Mean confidence over assessed nodes only. Averaging in untouched nodes
     // as zero would make every estimate look uncertain forever.
     const confidences = skillNodes
       .map((n) => confidenceById.get(n.id))
@@ -106,7 +130,14 @@ export function estimateLevels(
     const confidence =
       confidences.length === 0 ? 0 : confidences.reduce((a, b) => a + b, 0) / confidences.length
 
-    estimates.push({ skill, level: attained, coverage, confidence })
+    estimates.push({
+      skill,
+      level: attained,
+      nextLevel,
+      coverage,
+      atContentCeiling: nextLevel === null,
+      confidence,
+    })
   }
 
   return estimates
