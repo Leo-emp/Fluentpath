@@ -683,6 +683,35 @@ GST is a consumption tax borne by the customer, not a cost to the business — t
 
 The honest-ranges standard (Quality bar, §3.5) was a pedagogical decision. It is also the legal protection.
 
+### Sanctions
+
+As a UK company, services must not be provided to sanctioned jurisdictions or designated persons. UK sanctions on Russia and Iran were expanded again in May 2026.
+
+**Iran matters specifically here** — Iranian IELTS candidates are a substantial segment, taking the test for Canadian and Australian migration. It is a market the product would naturally attract and must actively exclude.
+
+**Paddle covers paying customers.** Sanctions screening of jurisdictions and designated persons is its legal obligation as merchant of record.
+
+**The free tier is the gap.** A free scored mock does not pass through Paddle, so it carries no screening. The obligation is not to *provide services*, not merely not to take payment. Sanctioned jurisdictions are therefore added to the same geo-block built for the EU/EEA — one list, no additional work.
+
+### US accessibility litigation
+
+US courts apply the ADA to commercial websites, and 1,037 accessibility lawsuits were filed in Q1 2026 alone (3,117 across 2025, up 27%). Exposure exists for any business serving US customers regardless of where it is established.
+
+**Proportionality:** roughly 70% of those suits target e-commerce and retail, with restaurants and fashion the most-hit sectors. Education SaaS is a smaller target, and a UK company with no US assets is a less attractive defendant. The risk is real but moderate.
+
+**Mitigation is already committed:** WCAG 2.2 AA conformance (Quality bar 7) plus a published accessibility statement. Marginal cost approximately zero.
+
+### Remaining items to verify before launch
+
+| Item | Action |
+|---|---|
+| **AI provider acceptable use** | Confirm Gemini, Claude and ElevenLabs terms permit educational assessment, and check what each says about output ownership |
+| **TTS voice licensing** | ElevenLabs commercial tier required; voices must be licensed for commercial synthetic speech |
+| **Learner-submitted content** | Acceptable use policy plus the ability to remove content and suspend accounts — someone will eventually submit something illegal or infringing |
+| **Vietnam data localisation** | Decree 53 requires local storage for certain services; verify before serving Vietnam |
+| **Generated content about real people** | Prohibited. Passages draw on public-domain factual sources, never invented claims about living individuals |
+| **Professional indemnity insurance** | Not legally required; the mechanism for transferring residual risk |
+
 ### Compliance checklist
 
 **In code:** provenance per asset · source whitelist enforced · **18+ date-of-birth gate** · deletion and export endpoints · audio retention job · scores as ranges with confidence · auto-generated attributions page · accessibility to standard (Equality Act duty, not only quality).
@@ -814,9 +843,12 @@ Diligent learners are not the cost risk. A person can produce only so much speec
 
 The destination is the full platform. This is shipping order, not scope reduction — every release is additive and nothing is rebuilt.
 
+**Sequenced for earliest revenue, not for completeness.** The original plan reached first sale at three to four months. That is too long to go without evidence, and the risk it creates is not legal or competitive — it is spending a year building before discovering whether anyone pays for the differentiator.
+
 | Release | Contents | Why here |
 |---|---|---|
-| **R1** | Skill graph, placement test, speaking + writing assessment, IELTS Speaking & Writing mocks, diagnosis and action plan | Smallest thing that is genuinely sellable; proves the hardest component (scoring credibility) first |
+| **R0 — first revenue** | Free scored IELTS Writing mock + **paid diagnosis and action plan**. No ladder, no speaking, no PTE, no OET | **~8 weeks.** The skill graph already exists. Tests the one genuinely unproven thing: whether people pay for the *explanation* as well as the score |
+| **R1** | Speaking assessment, complete IELTS Academic mocks, placement test | Completes the exam product once R0 has shown the diagnosis sells |
 | **R2** | IELTS Listening + Reading; complete IELTS mock | Completes the highest-volume exam |
 | **R3** | B1–C2 ladder, all four skills, vocabulary and grammar systems | Where existing users already are; converts exam churn into retention |
 | **R4** | PTE Academic and OET tracks and mocks | Same engine, new content packs and rubrics |
@@ -824,7 +856,11 @@ The destination is the full platform. This is shipping order, not scope reductio
 
 Content generation for later releases runs continuously in the background from R1 onward, since it is pipeline-bound rather than blocked on engineering.
 
-Realistic solo estimate with AI assistance: **R1 in 3–4 months; the full scope in 12–18 months.**
+Realistic solo estimate with AI assistance: **R0 in ~8 weeks; R1 in 3–4 months; the full scope in 12–18 months.**
+
+**The constraint is content, not code.** The engine is well-trodden API work on a familiar stack — the same author built JobPilot to 47 routes, 112 tests and an 8.8/10 security audit in roughly two months. What takes a year is generating, gating and reviewing thousands of validated items across six levels and four skills. R1b therefore matters more than any other release, and R0 exists so revenue starts before that year begins.
+
+**What R0 answers:** the market is proven — 3.5–4M IELTS candidates annually, compelled demand, and established willingness to pay ($20 for a single examiner-marked mock, $60–240 for courses). What is *not* proven is whether learners pay for a diagnosis as well as a score. Eight weeks answers that; twelve months of content generation before asking is the actual risk in this project.
 
 ---
 
