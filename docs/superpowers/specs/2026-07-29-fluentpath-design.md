@@ -328,6 +328,83 @@ Steps 3 and 5 are what separate a real teaching product from a question dump. St
 
 **Source data note:** the CEFR Companion Volume and CEFR-J datasets are openly available. The English Vocabulary Profile and English Grammar Profile are free *to educators*, which is not a commercial redistribution licence — they are used to inform internally-built inventories, never republished as data. Exam practice material is original throughout; official past papers are copyrighted and are not used.
 
+### 3.7 Content sourcing and licensing
+
+Binding rules. Content that cannot demonstrate compliance with this section does not ship, regardless of quality.
+
+*This is an engineering standard, not legal advice. It is designed so that the position is defensible and provable — a record rather than a recollection — and should be reviewed by a lawyer before any significant commercial launch.*
+
+#### Approved sources
+
+Nothing outside this list may enter the content pipeline without an explicit licence review.
+
+| Source | Licence | Used for | Obligation |
+|---|---|---|---|
+| CEFR Companion Volume | Free (Council of Europe) | Can-do descriptors | Cite |
+| **CEFR-J** (Tono Lab, TUFS) | Commercial permitted | Vocabulary and grammar profiles per level | **Cite** |
+| Octanove Vocabulary Profile | CC BY-SA 4.0 | C1/C2 vocabulary | Attribute; keep separable |
+| **VOA Learning English** | **Public domain** | Graded reading texts, human audio | **Credit learningenglish.voanews.com** |
+| **LibriVox** | **Public domain** | Human audio, varied accents | Credit (courtesy) |
+| US Government (NASA, NIH, CDC, NPS, LoC) | Public domain | Modern factual passages | None |
+| Wikinews | CC BY | Contemporary-language passages | **Attribute** |
+| Tatoeba | CC BY | Example sentences | **Attribute** |
+| Project Gutenberg | Public domain (US) | Literary passages — *dated language, limited use* | Check jurisdiction |
+| Unsplash / Pexels / Pixabay | Commercial permitted | Images | Per platform terms |
+| Generated content | Original | Lessons, exercises, explanations, distractors | Human-edited (see below) |
+
+**Licence preference order: public domain > CC BY > CC BY-SA.**
+
+**CC BY-SA is used only where the asset stays separable** (a standalone image, an unmodified quotation). It is never used as the basis of an adapted passage, because share-alike would oblige the derivative to carry the same licence — handing a competitor the right to take it.
+
+**CC BY-NC is prohibited outright.** Non-commercial licences are incompatible with a paid product. Most ELT material on OER Commons and OpenLearn falls here, and must be excluded by licence filter rather than by judgement.
+
+#### Prohibited sources — never ingested, in any form
+
+Not as training data, not as pipeline input, not as a prompt example, not as a style reference:
+
+- Official past papers or practice tests from IELTS, Cambridge, IDP, Pearson/PTE, or OET
+- British Council, BBC Learning English, or Cambridge English materials
+- Any competitor's lessons, items or explanations
+- Any CC BY-NC or all-rights-reserved material
+
+**The distinction that governs this:** reading something to understand a standard is research. Feeding it to a model to produce comparable material is derivative work, however different the output wording. Only the first is permitted.
+
+Official published sample answers with examiner commentary may be **studied** to calibrate the golden set. They may never be **reproduced, adapted, or used as generation input**.
+
+#### Provenance — a first-class schema field, not metadata
+
+Every passage, audio file and image carries, from creation:
+
+```
+sourceName | sourceUrl | licence | licenceUrl | attributionText | retrievedAt | modifications
+```
+
+This is a build requirement in R1b, not an afterthought. Without it the project cannot prove compliance, cannot respond to a takedown, and cannot selectively remove an asset later. Bolted on afterwards it is unprovable, because there would be thousands of assets and no record of any of them.
+
+An attributions page is generated automatically from this data, so credit obligations are met by construction rather than by discipline.
+
+#### Trademarks
+
+*IELTS*, *PTE Academic*, *OET*, *TOEFL* and *Cambridge English* are registered marks belonging to others.
+
+- Nominative use is permitted: "preparation for IELTS", "IELTS practice test"
+- Prohibited: their logos, their branding, any wording implying endorsement, accreditation or official status
+- A visible disclaimer — *"Not affiliated with, endorsed by, or approved by [exam owner]"* — appears on every exam-related page
+
+Exam formats and task types are not copyrightable; specific questions are. **All practice material is authored originally.**
+
+#### AI output and ownership
+
+Provider terms assign output rights to the user, but purely machine-generated content may not be copyrightable at all — meaning a competitor could copy the content bank with limited recourse.
+
+This is a moat weakness rather than a liability, and it is a further argument for the human review layer: **meaningful human editing strengthens the ownership claim** as well as the quality.
+
+#### Specific caveats
+
+- **VOA:** text and audio only. AP and Reuters photographs inside VOA articles remain copyrighted.
+- **LibriVox and Gutenberg:** public domain in the US; some works remain in copyright in life-plus-70 jurisdictions. Check before use in EU-facing content.
+- **Stock images:** permitted within lessons; not permitted to be redistributed as an image library.
+
 ---
 
 ## 4. Technical stack
@@ -492,6 +569,84 @@ The local-first design means a learner mid-session continues working even if Ver
 
 ---
 
+## 4e. Legal and regulatory position
+
+Binding decisions. *This is an engineering standard, not legal advice, and should be reviewed by a solicitor before significant commercial launch.*
+
+### The governing principle
+
+**Where the company is incorporated does not determine which laws apply. Where the customers are does.** The EU AI Act applies "irrespective of whether those providers are established in a third country" (Article 2(1)(a)), and catches non-EU providers whose output is used in the EU (Article 2(1)(c)). Incorporation is therefore not a lever; market selection is.
+
+### Decision: no EU/EEA at launch
+
+**FluentPath is a high-risk AI system if offered in the EU.** Annex III point 3(b) covers *"AI systems intended to be used to evaluate learning outcomes"* — and unlike points 3(c) and 3(d), that clause is **not limited to educational institutions**, so a consumer self-study app falls inside it.
+
+The Article 6(3) derogation is unavailable. It exempts Annex III systems performing narrow procedural or preparatory tasks, but ends with an absolute override: *"an AI system referred to in Annex III shall **always** be considered to be high-risk where the AI system performs profiling of natural persons."* FluentPath builds a per-learner model across hundreds of skill nodes, predicts performance, and automatically decides what each learner sees — profiling under GDPR Article 4(4). The override applies.
+
+**Mitigation:** geo-restrict EU/EEA by IP *and* billing address. Cost is near-zero — the target markets are India, the Philippines, Bangladesh, Pakistan, Nigeria and Vietnam. This removes the entire obligation set: risk management system, data governance, technical documentation, conformity assessment, CE marking, EU database registration, and an EU authorised representative.
+
+Revisit deliberately when the EU is worth serving. Never drift into it.
+
+### Decision: UK Ltd, not Australia (for now)
+
+| | UK Ltd | Australia Pty Ltd |
+|---|---|---|
+| Resident director required | No | **Yes — at least one director must genuinely reside in Australia. Cannot be waived; ASIC will not register without one** |
+| AI regulation | None (sector regulators, principles-based) | None currently — mandatory guardrails dropped Dec 2025 — but **legislation announced 15 July 2026, promised for 2027** |
+| Privacy | UK GDPR | Privacy Act; **small-business exemption removed 10 Dec 2026**, plus mandatory disclosure of automated decision-making |
+| Digital-services tax threshold | £90k VAT | A$75k GST |
+| Penalties | ICO tiers | Up to **A$50M** serious; **A$66k** for a non-compliant privacy policy |
+
+The resident-director requirement makes Australia impractical while operating from Thailand without paying for a nominee. **Revisit if the founder becomes Australian-resident** (a masters place from September 2027 would qualify).
+
+### Decision: 16+, not 18+
+
+A large share of IELTS Academic candidates are 17, applying to universities — excluding them would cost a real segment. 16+ matches IELTS's own recommended minimum age, sits above the UK's consent age of 13, and avoids COPPA (US, under 13) entirely.
+
+The UK Age Appropriate Design Code applies to 16–17 year olds, but its requirements — high privacy defaults, data minimisation, clear language, **no nudge techniques or dark patterns** — are already committed to under Quality bar 6. Compliance is achieved by having built it properly.
+
+Enforced by a real date-of-birth field at signup, not a checkbox.
+
+### Decision: voice processed for assessment only, never identification
+
+Voice becomes GDPR Article 9 special-category biometric data only when processed **to uniquely identify a person**. FluentPath assesses pronunciation, not identity.
+
+**Requirements:** the privacy notice states this explicitly; the pipeline is never used for speaker identification; audio is deleted on a retention schedule while transcripts and derived metrics are kept, because the transcript is what the product actually needs.
+
+### Decision: merchant of record, not direct payments
+
+**India's OIDAR regime requires non-resident digital service providers to register and remit GST regardless of revenue — no threshold.** India is the largest target market, so direct selling means Indian GST registration from the first sale, with similar rules across many target markets.
+
+GST is a consumption tax borne by the customer, not a cost to the business — the burden is registration, filing and record-keeping in every jurisdiction, which is impractical solo.
+
+**Paddle as merchant of record** becomes the legal seller and assumes those obligations globally. Cost ~5% + $0.50 against Stripe's ~2.9% + $0.30. The ~2% difference buys out multi-country tax administration.
+
+*This differs from the Stripe setup used on other projects, because this product sells to consumers in jurisdictions with no registration threshold.*
+
+### Marketing claims
+
+**Never promise a score.** accessiBe was fined **$1M by the FTC** for overstating what its AI could do — the same category of claim and product.
+
+| Prohibited | Permitted |
+|---|---|
+| "Guaranteed band 7" | "Estimated band range" |
+| "Official", "accredited" | "Built using the published band descriptors" |
+| "Examiner-accurate" | "Scored against the official criteria" |
+
+The honest-ranges standard (Quality bar, §3.5) was a pedagogical decision. It is also the legal protection.
+
+### Compliance checklist
+
+**In code:** provenance per asset · source whitelist enforced · 16+ date-of-birth gate · deletion and export endpoints · audio retention job · scores as ranges with confidence · auto-generated attributions page.
+
+**At launch:** EU/EEA geo-block · Paddle as MoR · ICO registration (~£50/yr) · processor agreements with Turso, Vercel, Cloudflare, ElevenLabs and LLM providers.
+
+**Before first sale:** privacy notice (including the voice statement *and* disclosure of automated decision-making) · terms (16+, no outcome guarantee, liability limits, England & Wales) · exam disclaimer on every exam page · refund and cancellation policy with one-click cancel and pre-renewal reminders.
+
+**Professional advice needed:** a UK company genuinely managed from Thailand raises a "central management and control" question about tax residency. An accountant, not this document.
+
+---
+
 ## 4d. Interface and experience
 
 ### The learner dashboard
@@ -632,7 +787,9 @@ Realistic solo estimate with AI assistance: **R1 in 3–4 months; the full scope
 | Generated content is off-level or wrong | **High** | The validation gate pipeline (§3.6) is a first-class build, not an afterthought; live item statistics catch what the gates miss |
 | Scores aren't trusted | **High** | Objective-feature split (§3.3); evidence-linked feedback; honest ranges with stated confidence rather than fake precision |
 | Crowded market | **High** | Compete on diagnosis depth and the ladder underneath, not on having a band-score button — which is the only thing competitors have |
-| Content licensing overreach | Medium | Internally-built inventories informed by open sources; original practice material; no republication of licensed databases |
+| **Content licensing / copyright challenge** | **High impact, low likelihood** | Whitelist of approved sources and an enforced blacklist (§3.7); provenance recorded per asset from creation; all practice material authored originally; no copyrighted source ever ingested in any form. Review by a lawyer before significant commercial launch |
+| **Trademark challenge from an exam owner** | Medium | Nominative use only, no logos or implied endorsement, visible disclaimer on every exam page (§3.7). These are the rights holders of the exams being prepared for, so this is not a theoretical risk |
+| Content bank copied by a competitor | Medium | Purely AI-generated content may not be copyrightable. Human editing strengthens the ownership claim — a further reason the review layer earns its cost |
 | Exam-side churn | Medium | The ladder is the retention mechanism; this is precisely why the scope includes it |
 | Scope fatigue over 12–18 months | Medium | Each release is independently sellable; revenue starts at R1 |
 | **Learner loses progress to a sync failure** | **High** | Append-only events with client-generated IDs make sync idempotent and replayable; mastery is recomputed from the log rather than synced (§4c). Unforgivable in a study product, so designed up front |
@@ -652,6 +809,12 @@ Realistic solo estimate with AI assistance: **R1 in 3–4 months; the full scope
 **Cloudflare R2 for content, not Vercel Blob (decided 2026-07-29).** Free egress at any scale versus $0.05/GB on every download including cache hits. See §4.1 for the cost comparison — the difference reaches hundreds of dollars a month at scale, and R2 additionally has better edge presence in the target markets.
 
 **Local-first client with batched session writes (decided 2026-07-29).** Required to meet the latency budgets, and it simultaneously removes the write-throughput ceiling and delivers offline capability. See §4b and §4c.
+
+**Content sourced entirely from public-domain and commercially-permissive sources; zero content budget (decided 2026-07-29).** No licensing fees, no paid content banks. The full sourcing whitelist, prohibited-source blacklist, provenance requirements and trademark rules are in §3.7 and are binding.
+
+The accepted trade-off: quality is verified **empirically after release** — through item statistics, learner reporting and abandonment tracking — rather than **editorially before release** by a paid reviewer. Some flawed items will reach learners. That is acceptable only because the live signals catch them quickly, and it is a knowingly different risk profile from paid editorial review.
+
+**Two consequences accepted with it:** OET is deferred until a healthcare professional can validate clinical scenarios, since neither AI nor an English teacher can verify medical plausibility and healthcare professionals lose trust instantly over wrong clinical detail. And expertise, where needed, is obtained by trading product access — free lifetime accounts for reviewers, practicum credit for TESOL students, revenue share for a former examiner — rather than by paying cash.
 
 **Vercel compute region set to `sin1` (decided 2026-07-29).** Vercel defaults to US East, which would add roughly 0.2s to every request from the primary markets. Must be set explicitly in configuration.
 
