@@ -1,3 +1,3 @@
 // Barrel for all Drizzle table definitions.
-// Populated by Task 2 (skill graph) and Task 5 (learner mastery).
-export {}
+// Learner mastery is added in Task 5.
+export * from './skill-graph'
