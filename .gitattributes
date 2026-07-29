@@ -1,1 +1,7 @@
 * text=auto eol=lf
+
+# Vendored third-party data — keep byte-identical to the upstream release so
+# it can be re-verified against the source. The CSV parser handles both CRLF
+# and LF, so nothing depends on normalising them.
+data/inventories/*.csv -text
+
