@@ -359,22 +359,8 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
       ],
     })
     const review = reviewItem(item, inventory)
-    // "can goes" — PastTense or present tense? compromise tags "goes" as PresentTense
-    // which is inflected. Our isInflectedVerb checks for PastTense|Gerund.
-    // Actually "goes" is present tense, not tagged as PastTense or Gerund by compromise.
-    // The modal rule requires infinitive — isInflectedVerb checks PastTense|Gerund.
-    // "goes" is PresentTense, not caught by isInflectedVerb. Let's verify.
-    // This test documents what the current gates catch. If "can goes" passes, it's
-    // a gap worth noting.
     const malformed = review.issues.filter((i) => i.code === 'MALFORMED_OPTION')
-    // Document actual behaviour — fix in a follow-up if this is a gap
-    if (malformed.length === 0) {
-      // "can goes" is not caught yet — the gate only checks PastTense|Gerund
-      // after modals, not PresentTense. This is a known limitation.
-      expect(true).toBe(true)
-    } else {
-      expect(malformed.length).toBeGreaterThan(0)
-    }
+    expect(malformed.length).toBeGreaterThanOrEqual(2)
   })
 
   it('"since" is not a giveaway on a non-tense-contrast item', () => {

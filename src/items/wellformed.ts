@@ -172,5 +172,10 @@ function isBareOrPresentVerb(word: string): boolean {
 function isInflectedVerb(word: string): boolean {
   const tags = nlp(word).json()[0]?.terms?.[0]?.tags ?? []
   if (!tags.includes('Verb')) return false
-  return tags.includes('PastTense') || tags.includes('Gerund')
+  if (tags.includes('PastTense') || tags.includes('Gerund')) return true
+  // "goes" is PresentTense without Infinitive — the third-person -s form.
+  // "go" is PresentTense AND Infinitive — the bare form, which is correct
+  // after a modal. Only flag the former.
+  if (tags.includes('PresentTense') && !tags.includes('Infinitive')) return true
+  return false
 }
