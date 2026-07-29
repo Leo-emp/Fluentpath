@@ -886,6 +886,36 @@ Realistic solo estimate with AI assistance: **R0 in ~8 weeks; R1 in 3–4 months
 
 ## 8. Decisions made
 
+**Levels carry confidence tiers, and only confident ones measure (decided 2026-07-29, from building R1b-a).**
+
+Three tiers: **1.0** stated by a source dataset · **0.9** curated by this project · **≤0.7** derived from component words. The first two drive the measured level of a text; derived levels are reported as questions for review and never move a number.
+
+This was learned the hard way. Deriving phrasal verb levels from component words inflated transparent phrases — `go to` and `live in` both became B1, so *"I live in a small house. I go to school by bus."* profiled as intermediate. Two attempts to distinguish idiomatic from transparent offline (WordNet definition glosses, tagged-sense frequency) both failed; the glosses are essentially random and `give up` has the *highest* frequency count of any phrase.
+
+Measured accuracy of the derivation, against the 157 multi-word entries with stated levels: **32.5% exact, 70.7% within one level.** Honestly mediocre, which is why it is advisory only.
+
+**Common phrasal verbs are curated, because no source levels them (decided 2026-07-29).**
+
+CEFR-J contains only 19 multi-word entries of phrasal shape, and most are prepositions (*next to*) or adjectives (*fed up*). The only true phrasal verbs it holds are rare and literary — *eke out*, *mull over*, *dole out*, *glory in*, all C2. Every common phrasal verb a learner meets is absent.
+
+So roughly 190 are authored, spanning A1–C2, at confidence 0.9. **Transparent phrases are included deliberately**: without an entry, `go to` falls through to derivation and gets guessed at B1. The fix is not to suppress the guess but to supply the answer.
+
+Calibration check: the C2 assignments here independently match CEFR-J's own for the four it covers. These remain expert judgement rather than corpus evidence, and belong in the first batch a qualified teacher reviews.
+
+**Every distractor must name its misconception (decided 2026-07-29).**
+
+Enforced in the type, not merely documented — a wrong option carries a mandatory field describing the belief that would lead a learner to choose it.
+
+The reason is Quality bar 1's diagnostic-distractor requirement, made concrete. A generated sample lesson contained the option `have lose` — broken English nobody picks for a reason, which turns a four-option question into a three-option one and tells the diagnosis engine nothing. Vagueness is rejected in two ways: terms describing the *item* (`distractor`, `placeholder`) anywhere in the text, and weak openers (`wrong`, `incorrect`) when they carry the whole description.
+
+**R1b sequence reordered: item quality before content schema (decided 2026-07-29).**
+
+The original order put the content schema next. A generated sample lesson showed the *explanation* met the quality bar while the *exercises* did not — lazy distractors, and one question answerable by spotting a date without understanding anything. Item quality is therefore the greater risk and is built and proven first.
+
+Revised order: **R1b-a** inventories and profiler (done) · **R1b-b** item quality gates · **R1b-c** content schema · **R1b-d** constrained generation and correctness gates · **R1b-e** teaching-quality gates and golden set · **R1b-f** source connectors · **R1b-g** review queue and live signals.
+
+
+
 **Turso retained over Postgres (decided 2026-07-29).** Postgres was seriously considered and rejected. Its advantages are real — concurrent writes, pgvector, and a far better query planner for aggregation. But the workload here is read-heavy at the edge with modest writes and *batch* analytics, which is Turso's shape rather than Postgres's. The deciding factors were the free tier (5 GB against Neon's 0.5 GB, supporting roughly ten times as many learners before paying), predictable cheap scaling ($4.99 for 9 GB and 25M writes), and existing familiarity. The one genuine loss is analytical query power, which is deferrable: a separate analytical store can be added later without migrating transactional data.
 
 *Recorded honestly because the reasoning matters:* an earlier version of this argument leaned on Turso's sub-millisecond embedded replicas. That was wrong — embedded replicas require a persistent local filesystem and do not work on Vercel Functions. Turso is the right choice on cost, simplicity and fit, **not** on latency. Latency is solved in the application layer (§4b) and would need solving that way whichever database was chosen.
