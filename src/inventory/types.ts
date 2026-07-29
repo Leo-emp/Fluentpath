@@ -25,15 +25,6 @@ export interface LexicalEntry {
   confidence: number
 }
 
-export interface MultiwordEntry {
-  /** Space-separated, lowercase, e.g. 'give up'. */
-  phrase: string
-  level: CefrLevel
-  source: string
-  levelSource: LevelSource
-  confidence: number
-}
-
 export interface GrammarEntry {
   /** Shorthand code from the source, e.g. 'PP.I_am'. */
   id: string

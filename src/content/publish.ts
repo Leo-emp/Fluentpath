@@ -16,6 +16,30 @@ import { getItem, getItemVersion, setCurrentVersion } from './repository'
  * under deadline pressure is not a gate.
  */
 
+/**
+ * Item types that have quality gates defined.
+ *
+ * Publishing a type absent from this list is refused outright. That is
+ * deliberate: the alternative is coercing an unknown payload into the MCQ
+ * shape and reporting a misleading failure — a gap-fill item has no options,
+ * so it would be rejected for "needing at least three options" rather than for
+ * the real reason, which is that nothing has been written to check it.
+ *
+ * Refusing clearly is safe. Checking the wrong thing and reporting success
+ * would let unchecked content reach a learner.
+ */
+const GATED_ITEM_TYPES = new Set(['mcq'])
+
+export class UnsupportedItemTypeError extends Error {
+  constructor(readonly itemType: string) {
+    super(
+      `No quality gates are defined for item type "${itemType}", so it cannot be published. ` +
+        `Gated types: ${[...GATED_ITEM_TYPES].join(', ')}.`,
+    )
+    this.name = 'UnsupportedItemTypeError'
+  }
+}
+
 export class PublishRejectedError extends Error {
   constructor(
     readonly versionId: string,
@@ -52,6 +76,11 @@ export async function publishItemVersion(
 
   const item = await getItem(db, version.itemId)
   if (!item) throw new Error(`Item "${version.itemId}" is missing for version "${versionId}".`)
+
+  // Refuse before reading the payload. Every gate below assumes the MCQ shape,
+  // and running them over a different type would produce a confident, wrong
+  // verdict rather than an honest refusal.
+  if (!GATED_ITEM_TYPES.has(item.type)) throw new UnsupportedItemTypeError(item.type)
 
   // The payload is stored as JSON, so its shape is reconstructed here with the
   // level and node ids the item row carries.

@@ -10,7 +10,12 @@ import {
   recordProvenance,
   retireItem,
 } from '@/content/repository'
-import { PublishRejectedError, publishItemVersion, rollbackItem } from '@/content/publish'
+import {
+  PublishRejectedError,
+  UnsupportedItemTypeError,
+  publishItemVersion,
+  rollbackItem,
+} from '@/content/publish'
 import type { Db } from '@/db/client'
 
 const NOW = 1_700_000_000_000
@@ -142,6 +147,74 @@ describe('the quality gate at publication', () => {
     expect(error).toBeInstanceOf(PublishRejectedError)
     expect(error.message).toContain('STEM_GIVEAWAY')
     expect(error.message).toContain('MALFORMED_OPTION')
+  })
+})
+
+describe('item types without gates', () => {
+  // The schema allows gap_fill, writing_task and speaking_prompt, but only
+  // MCQ has checks written. Coercing another type into the MCQ shape would
+  // reject it for "needing three options" rather than for the real reason.
+
+  it('refuses to publish a type it cannot check', async () => {
+    await recordProvenance(db, { id: 'prov.x', sourceName: 'original', licence: 'original' }, NOW)
+    const versionId = await createItem(
+      db,
+      {
+        id: 'item.gap',
+        type: 'gap_fill',
+        level: 'B1',
+        skill: 'general',
+        nodeIds: [],
+        payload: { stem: 'I ______ my keys.', answer: 'lost' },
+        provenanceId: 'prov.x',
+      },
+      NOW,
+    )
+
+    await expect(publishItemVersion(db, versionId, inventory, NOW)).rejects.toThrow(
+      UnsupportedItemTypeError,
+    )
+  })
+
+  it('says why, naming the type and what is supported', async () => {
+    await recordProvenance(db, { id: 'prov.y', sourceName: 'original', licence: 'original' }, NOW)
+    const versionId = await createItem(
+      db,
+      {
+        id: 'item.write',
+        type: 'writing_task',
+        level: 'B2',
+        skill: 'writing',
+        nodeIds: [],
+        payload: { prompt: 'Describe a place you know well.' },
+        provenanceId: 'prov.y',
+      },
+      NOW,
+    )
+
+    const error = await publishItemVersion(db, versionId, inventory, NOW).catch((e) => e)
+    expect(error.message).toContain('writing_task')
+    expect(error.message).toContain('mcq')
+  })
+
+  it('leaves the unsupported item unpublished', async () => {
+    await recordProvenance(db, { id: 'prov.z', sourceName: 'original', licence: 'original' }, NOW)
+    const versionId = await createItem(
+      db,
+      {
+        id: 'item.speak',
+        type: 'speaking_prompt',
+        level: 'B1',
+        skill: 'speaking',
+        nodeIds: [],
+        payload: { prompt: 'Talk about your last holiday.' },
+        provenanceId: 'prov.z',
+      },
+      NOW,
+    )
+
+    await publishItemVersion(db, versionId, inventory, NOW).catch(() => {})
+    expect((await getItem(db, 'item.speak'))?.status).toBe('draft')
   })
 })
 
