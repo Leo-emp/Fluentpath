@@ -2,11 +2,22 @@ import nlp from 'compromise'
 import { CEFR_LEVELS, levelIndex, type CefrLevel } from '@/skill-graph/types'
 import { lemmaCandidates } from './lemmas'
 
+export interface PhraseEntry {
+  level: CefrLevel
+  /**
+   * 1 when a dataset stated the level; below 1 when this project derived it.
+   *
+   * Derived levels do not contribute to the measured level of a text — see
+   * `CONFIDENT_LEVEL_THRESHOLD`.
+   */
+  confidence: number
+}
+
 export interface ProfilerInventory {
-  /** headword -> lowest level */
+  /** headword -> lowest level. All stated by a dataset, so all confident. */
   words: Map<string, CefrLevel>
-  /** space-separated phrase -> level */
-  phrases: Map<string, CefrLevel>
+  /** space-separated phrase -> level and confidence */
+  phrases: Map<string, PhraseEntry>
 }
 
 export interface ProfiledItem {
@@ -21,15 +32,43 @@ export interface ProfileResult {
   matched: number
   counts: Record<CefrLevel, number>
   aboveLevel: ProfiledItem[]
+  /**
+   * Phrases whose level is an estimate rather than evidence.
+   *
+   * Reported for review rather than folded into `counts` or `coverageLevel`.
+   * These are the phrases whose meaning may not be the sum of their parts —
+   * "carry out", "put off" — but the derivation cannot reliably tell those
+   * apart from transparent ones like "go to" and "live in", so they are
+   * surfaced as a question rather than asserted as a fact.
+   */
+  uncertainPhrases: ProfiledItem[]
   unmatched: string[]
   properNouns: string[]
-  /** Level at which cumulative coverage reaches 90% of matched tokens. */
+  /**
+   * Level at which cumulative coverage reaches 90% of confidently matched
+   * tokens. Derived phrase levels are excluded, so this figure is only ever
+   * as good as the evidence behind it.
+   */
   coverageLevel: CefrLevel | null
   unmatchedRate: number
 }
 
 /** Longest phrase considered. WordNet multi-word verbs are almost all 2-3. */
 const MAX_PHRASE_WORDS = 4
+
+/**
+ * Minimum confidence for a level to count toward the measured level of a text.
+ *
+ * Stated levels score 1; derived ones cap at 0.7. The gap is deliberate.
+ *
+ * The alternative — letting derived levels drive the measurement — was tried
+ * and produced exactly the failure this guards against: "I live in a small
+ * house. I go to school by bus." profiled as B1, because `live in` and `go to`
+ * were both inflated to B1 by an idiomaticity assumption that is true of
+ * "give up" and false of them. Two attempts to distinguish the two cases
+ * offline (WordNet glosses, tagged-sense frequency) both failed.
+ */
+const CONFIDENT_LEVEL_THRESHOLD = 1
 
 /**
  * Report what CEFR level a text is, and what sits above a target level.
@@ -47,6 +86,7 @@ export function profileText(
 ): ProfileResult {
   const counts = Object.fromEntries(CEFR_LEVELS.map((l) => [l, 0])) as Record<CefrLevel, number>
   const aboveLevel: ProfiledItem[] = []
+  const uncertainPhrases: ProfiledItem[] = []
   const unmatched: string[] = []
   const properNouns: string[] = []
 
@@ -78,7 +118,21 @@ export function profileText(
     const phrase = matchPhraseAt(terms, i, inventory)
 
     if (phrase) {
-      record({ surface: phrase.surface, lemma: phrase.lemma, level: phrase.level, isPhrase: true })
+      const item: ProfiledItem = {
+        surface: phrase.surface,
+        lemma: phrase.lemma,
+        level: phrase.level,
+        isPhrase: true,
+      }
+
+      if (phrase.confidence >= CONFIDENT_LEVEL_THRESHOLD) {
+        record(item)
+      } else {
+        // An estimate. Surfaced for review, but never allowed to move the
+        // measured level of the text.
+        uncertainPhrases.push(item)
+      }
+
       i += phrase.length
       continue
     }
@@ -110,6 +164,7 @@ export function profileText(
     matched,
     counts,
     aboveLevel,
+    uncertainPhrases,
     unmatched,
     properNouns,
     coverageLevel,
@@ -128,7 +183,7 @@ function matchPhraseAt(
   terms: Array<{ surface: string; tags: string[] }>,
   index: number,
   inventory: ProfilerInventory,
-): { surface: string; lemma: string; level: CefrLevel; length: number } | null {
+): { surface: string; lemma: string; level: CefrLevel; confidence: number; length: number } | null {
   const maxLength = Math.min(MAX_PHRASE_WORDS, terms.length - index)
 
   // Longest first, so "look forward to" wins over "look forward".
@@ -139,13 +194,14 @@ function matchPhraseAt(
 
     for (const headLemma of lemmaCandidates(head.surface, head.tags)) {
       const candidate = [headLemma, ...tail].join(' ')
-      const level = inventory.phrases.get(candidate)
+      const entry = inventory.phrases.get(candidate)
 
-      if (level) {
+      if (entry) {
         return {
           surface: window.map((t) => t.surface).join(' '),
           lemma: candidate,
-          level,
+          level: entry.level,
+          confidence: entry.confidence,
           length,
         }
       }

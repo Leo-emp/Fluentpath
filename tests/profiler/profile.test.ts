@@ -2,13 +2,20 @@ import { describe, it, expect } from 'vitest'
 import { profileText, type ProfilerInventory } from '@/profiler/profile'
 import type { CefrLevel } from '@/skill-graph/types'
 
+/** Phrases default to confidence 1 (stated) unless a tuple supplies one. */
 function inv(
   words: Record<string, CefrLevel>,
-  phrases: Record<string, CefrLevel> = {},
+  phrases: Record<string, CefrLevel | [CefrLevel, number]> = {},
 ): ProfilerInventory {
   return {
     words: new Map(Object.entries(words)) as Map<string, CefrLevel>,
-    phrases: new Map(Object.entries(phrases)) as Map<string, CefrLevel>,
+    phrases: new Map(
+      Object.entries(phrases).map(([phrase, value]) =>
+        Array.isArray(value)
+          ? [phrase, { level: value[0], confidence: value[1] }]
+          : [phrase, { level: value, confidence: 1 }],
+      ),
+    ),
   }
 }
 
@@ -116,6 +123,26 @@ describe('level reporting', () => {
   it('reports the unmatched rate', () => {
     const r = profileText('cat dog', inv({ cat: 'A1' }))
     expect(r.unmatchedRate).toBeCloseTo(0.5)
+  })
+
+  it('reports a low-confidence phrase separately without moving the level', () => {
+    // "go to" derived at B1 must not make a beginner sentence read as B1.
+    const r = profileText(
+      'I go to school',
+      inv({ i: 'A1', go: 'A1', to: 'A1', school: 'A1' }, { 'go to': ['B1', 0.7] }),
+    )
+    expect(r.coverageLevel).toBe('A1')
+    expect(r.counts.B1).toBe(0)
+    expect(r.uncertainPhrases.map((i) => i.lemma)).toEqual(['go to'])
+  })
+
+  it('still lets a stated phrase level move the measured level', () => {
+    const r = profileText(
+      'I go to school',
+      inv({ i: 'A1', go: 'A1', to: 'A1', school: 'A1' }, { 'go to': 'B1' }),
+    )
+    expect(r.counts.B1).toBe(1)
+    expect(r.uncertainPhrases).toHaveLength(0)
   })
 
   it('handles empty text without dividing by zero', () => {

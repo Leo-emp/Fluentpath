@@ -19,28 +19,59 @@ describe('inventory is populated from the real sources', () => {
 })
 
 describe('the measured defect is fixed', () => {
-  // Each of these profiled as A2 before phrases were matched — measured, not
-  // suspected. Kept as regression tests so the defect cannot silently return.
+  // Before phrases were matched at all, each of these was invisible — the
+  // profiler saw only easy component words and reported A2. Kept as regression
+  // tests so the blind spot cannot silently return.
+  //
+  // Note what is asserted: the phrase is DETECTED and surfaced, not that the
+  // measured level rises. WordNet cannot reliably tell "carry out" (idiomatic)
+  // from "go to" (transparent), so their derived levels are reported as
+  // questions for review rather than asserted as measurements.
 
-  it('recognises "gave up" as above A2', () => {
-    const r = profileText('She gave up smoking last year.', inventory)
-    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
+  const uncertain = (text: string) =>
+    profileText(text, inventory).uncertainPhrases.map((i) => i.lemma)
+
+  it('detects "give up"', () => {
+    expect(uncertain('She gave up smoking last year.')).toContain('give up')
   })
 
-  it('recognises "look after" as above A2', () => {
-    const r = profileText('Please look after my cat while I am away.', inventory)
-    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
+  it('detects "look after"', () => {
+    expect(uncertain('Please look after my cat while I am away.')).toContain('look after')
   })
 
-  it('recognises a sentence with two phrasal verbs as clearly above A2', () => {
-    const r = profileText('The committee carried out a review and put off the decision.', inventory)
-    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
+  it('detects both phrasal verbs in one sentence', () => {
+    const found = uncertain('The committee carried out a review and put off the decision.')
+    expect(found).toContain('carry out')
+    expect(found).toContain('put off')
   })
 
-  it('flags the phrase itself when targeting A2', () => {
-    const r = profileText('She gave up smoking.', inventory, 'A2')
-    const phrases = r.aboveLevel.filter((i) => i.isPhrase).map((i) => i.lemma)
-    expect(phrases).toContain('give up')
+  it('matches the phrase rather than counting its parts separately', () => {
+    const r = profileText('She gave up smoking.', inventory)
+    // "give" and "up" must not appear as separate A1 hits — the phrase
+    // consumed both tokens.
+    const singles = r.aboveLevel.concat(r.uncertainPhrases).filter((i) => !i.isPhrase)
+    expect(singles.map((i) => i.lemma)).not.toContain('give')
+  })
+})
+
+describe('does not inflate simple text', () => {
+  // The regression this design exists to prevent. Treating every WordNet
+  // multi-word verb as idiomatic made "I live in a small house. I go to
+  // school by bus." profile as B1.
+
+  it('keeps a beginner sentence full of transparent phrases at A1', () => {
+    const r = profileText(
+      'My name is Anna. I live in a small house with my family. I go to school by bus.',
+      inventory,
+    )
+    expect(r.coverageLevel).toBe('A1')
+  })
+
+  it('still surfaces those transparent phrases for review', () => {
+    const r = profileText('I live in a house and go to school.', inventory)
+    // They are reported — a reviewer may confirm or dismiss them — but they
+    // do not move the number.
+    expect(r.uncertainPhrases.length).toBeGreaterThan(0)
   })
 })
 

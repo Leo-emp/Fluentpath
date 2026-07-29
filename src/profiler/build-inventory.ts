@@ -3,7 +3,7 @@ import { loadVocabulary } from '@/inventory/load-vocabulary'
 import { extractMultiwordVerbs } from '@/inventory/load-multiword'
 import { buildLexicalLookup, deriveMultiwordLevel } from '@/inventory/level-multiword'
 import { levelIndex, type CefrLevel } from '@/skill-graph/types'
-import type { ProfilerInventory } from './profile'
+import type { PhraseEntry, ProfilerInventory } from './profile'
 
 const VOCAB_CSV = 'data/inventories/cefrj-vocabulary-profile-1.5.csv'
 const OCTANOVE_CSV = 'data/inventories/octanove-vocabulary-profile-c1c2-1.0.csv'
@@ -33,26 +33,33 @@ export function buildProfilerInventory(): ProfilerInventory {
     if (!existing || levelIndex(e.level) < levelIndex(existing)) words.set(e.headword, e.level)
   }
 
-  const phrases = new Map<string, CefrLevel>()
+  const phrases = new Map<string, PhraseEntry>()
 
-  // Multi-word entries that came with a stated level are authoritative and
-  // take precedence over anything derived.
+  // Multi-word entries that came with a stated level are authoritative. These
+  // carry confidence 1 and do drive the measured level of a text.
   for (const e of entries) {
     if (!e.headword.includes(' ')) continue
     const existing = phrases.get(e.headword)
-    if (!existing || levelIndex(e.level) < levelIndex(existing)) phrases.set(e.headword, e.level)
+    if (!existing || levelIndex(e.level) < levelIndex(existing.level)) {
+      phrases.set(e.headword, { level: e.level, confidence: 1 })
+    }
   }
 
-  // WordNet phrases have no stated level, so derive one. Multi-word verbs are
-  // treated as idiomatic by default: that is precisely what makes them worth
-  // listing separately, and it is the conservative choice for a gate.
-  // Over-estimating difficulty rejects content for review; under-estimating
-  // ships it to a learner who cannot read it.
+  // WordNet phrases have no stated level, so one is derived. They are treated
+  // as idiomatic, which is right for "give up" and wrong for "go to" — and
+  // nothing in WordNet reliably distinguishes the two. Both glosses and
+  // tagged-sense frequency were tested as discriminators and neither worked.
+  //
+  // So the derived level is carried at low confidence and reported as a
+  // question rather than asserted as a measurement. That keeps genuinely hard
+  // phrases visible for review without inflating the level of simple text.
   const lookup = buildLexicalLookup(entries.filter((e) => !e.headword.includes(' ')))
 
   for (const phrase of extractMultiwordVerbs(readFileSync(WORDNET_VERBS, 'utf8'))) {
     if (phrases.has(phrase)) continue // never override a stated level
-    phrases.set(phrase, deriveMultiwordLevel(phrase, lookup, { idiomatic: true }).level)
+
+    const derived = deriveMultiwordLevel(phrase, lookup, { idiomatic: true })
+    phrases.set(phrase, { level: derived.level, confidence: derived.confidence })
   }
 
   return { words, phrases }
