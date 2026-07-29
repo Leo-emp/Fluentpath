@@ -69,3 +69,23 @@ describe('basics', () => {
     expect(checkWellFormed(item(['notwithstanding the delay']))).toHaveLength(0)
   })
 })
+
+describe('verbs whose participle looks like the bare form', () => {
+  // Found by measuring a batch of generated items: 9 of 10 passed, and the
+  // one failure was this false positive. Unfixed it would have rejected every
+  // correct item using read, put, cut, set, cost or hit.
+
+  it('accepts "has read"', () => {
+    expect(checkWellFormed(item(['has read']))).toHaveLength(0)
+  })
+
+  it('accepts the other invariant verbs after an auxiliary', () => {
+    for (const phrase of ['have put', 'has cut', 'had set', 'have cost', 'has hit', 'have let']) {
+      expect(checkWellFormed(item([phrase])), `rejected "${phrase}"`).toHaveLength(0)
+    }
+  })
+
+  it('still rejects a regular bare verb after an auxiliary', () => {
+    expect(checkWellFormed(item(['have lose']))).not.toHaveLength(0)
+  })
+})

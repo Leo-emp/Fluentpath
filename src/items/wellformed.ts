@@ -31,6 +31,44 @@ const AUXILIARY_RULES: Array<{
 
 const MODALS = new Set(AUXILIARY_RULES[1]!.aux)
 
+/**
+ * Verbs whose base form, past tense and past participle are identical.
+ *
+ * "has read" is correct English, but the participle is spelled exactly like
+ * the bare form, so a tagger sees a bare verb after an auxiliary and reports a
+ * problem that is not there.
+ *
+ * Found by measurement rather than reasoning: a batch of ten generated items
+ * scored 9/10, and the single failure was this false positive on "has read".
+ * Left unfixed it would have rejected every correct item using read, put, cut,
+ * set, cost or hit — the exact failure this module was written to avoid.
+ */
+const INVARIANT_VERBS = new Set([
+  'bet',
+  'broadcast',
+  'burst',
+  'cast',
+  'cost',
+  'cut',
+  'forecast',
+  'hit',
+  'hurt',
+  'let',
+  'put',
+  'quit',
+  'read',
+  'rid',
+  'set',
+  'shed',
+  'shut',
+  'slit',
+  'split',
+  'spread',
+  'thrust',
+  'upset',
+  'wed',
+])
+
 export function checkWellFormed(item: McqItem): ItemIssue[] {
   const issues: ItemIssue[] = []
 
@@ -115,6 +153,10 @@ function isAdverb(word: string): boolean {
  * needed to catch "have lose".
  */
 function isBareOrPresentVerb(word: string): boolean {
+  // "has read" is correct — the participle is spelled like the bare form, so
+  // these can never be judged from the surface word alone.
+  if (INVARIANT_VERBS.has(word)) return false
+
   const term = nlp(word).json()[0]?.terms?.[0]
   const tags = term?.tags ?? []
   if (!tags.includes('Verb')) return false
