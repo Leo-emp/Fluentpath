@@ -39,12 +39,18 @@ const UNFINISHED_TIME = ['since', 'so far', 'up to now', 'this week', 'this mont
 /** Node ids whose whole point is the tense contrast these markers resolve. */
 const TENSE_CONTRAST_NODES = ['pp_vs_past_simple', 'present_perfect', 'past_simple']
 
+// Match a fragment as a complete dot-segment — "present_perfect" matches
+// "gram.b1.present_perfect" but not "gram.b2.present_perfect_continuous".
+function matchesDotSegment(id: string, fragment: string): boolean {
+  return id.split('.').some((seg) => seg === fragment)
+}
+
 export function checkGiveaway(item: McqItem): ItemIssue[] {
   const issues: ItemIssue[] = []
   const stem = item.stem.toLowerCase()
 
   const testsTenseContrast = item.nodeIds.some((id) =>
-    TENSE_CONTRAST_NODES.some((fragment) => id.includes(fragment)),
+    TENSE_CONTRAST_NODES.some((fragment) => matchesDotSegment(id, fragment)),
   )
 
   if (!testsTenseContrast) return issues
