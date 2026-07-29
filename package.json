@@ -16,6 +16,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@libsql/client": "^0.17.4",
+    "compromise": "^14.16.0",
     "drizzle-orm": "^0.45.2",
     "next": "^16.2.12",
     "react": "^19.2.8",
