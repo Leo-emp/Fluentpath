@@ -19,38 +19,43 @@ describe('inventory is populated from the real sources', () => {
 })
 
 describe('the measured defect is fixed', () => {
-  // Before phrases were matched at all, each of these was invisible — the
-  // profiler saw only easy component words and reported A2. Kept as regression
-  // tests so the blind spot cannot silently return.
+  // Before phrases were matched at all, each of these profiled as A2 — the
+  // profiler saw only easy component words. Measured, not suspected. Kept as
+  // regression tests so the blind spot cannot silently return.
   //
-  // Note what is asserted: the phrase is DETECTED and surfaced, not that the
-  // measured level rises. WordNet cannot reliably tell "carry out" (idiomatic)
-  // from "go to" (transparent), so their derived levels are reported as
-  // questions for review rather than asserted as measurements.
+  // These phrases are in the curated list, so their levels are confident and
+  // do move the measured level of the text.
 
-  const uncertain = (text: string) =>
-    profileText(text, inventory).uncertainPhrases.map((i) => i.lemma)
-
-  it('detects "give up"', () => {
-    expect(uncertain('She gave up smoking last year.')).toContain('give up')
+  it('rates "gave up" above A2', () => {
+    const r = profileText('She gave up smoking last year.', inventory)
+    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
   })
 
-  it('detects "look after"', () => {
-    expect(uncertain('Please look after my cat while I am away.')).toContain('look after')
+  it('rates "look after" above A2', () => {
+    const r = profileText('Please look after my cat while I am away.', inventory)
+    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
   })
 
-  it('detects both phrasal verbs in one sentence', () => {
-    const found = uncertain('The committee carried out a review and put off the decision.')
-    expect(found).toContain('carry out')
-    expect(found).toContain('put off')
+  it('rates a sentence with two phrasal verbs above A2', () => {
+    const r = profileText('The committee carried out a review and put off the decision.', inventory)
+    expect(levelIndex(r.coverageLevel!)).toBeGreaterThan(levelIndex('A2'))
+  })
+
+  it('flags the phrase itself when targeting A2', () => {
+    const r = profileText('She gave up smoking.', inventory, 'A2')
+    expect(r.aboveLevel.filter((i) => i.isPhrase).map((i) => i.lemma)).toContain('give up')
   })
 
   it('matches the phrase rather than counting its parts separately', () => {
     const r = profileText('She gave up smoking.', inventory)
-    // "give" and "up" must not appear as separate A1 hits — the phrase
-    // consumed both tokens.
     const singles = r.aboveLevel.concat(r.uncertainPhrases).filter((i) => !i.isPhrase)
     expect(singles.map((i) => i.lemma)).not.toContain('give')
+  })
+
+  it('places the common phrasal verbs at their curated levels', () => {
+    expect(inventory.phrases.get('give up')).toMatchObject({ level: 'B1' })
+    expect(inventory.phrases.get('carry out')).toMatchObject({ level: 'B2' })
+    expect(inventory.phrases.get('eke out')).toMatchObject({ level: 'C2' })
   })
 })
 
@@ -67,11 +72,18 @@ describe('does not inflate simple text', () => {
     expect(r.coverageLevel).toBe('A1')
   })
 
-  it('still surfaces those transparent phrases for review', () => {
-    const r = profileText('I live in a house and go to school.', inventory)
-    // They are reported — a reviewer may confirm or dismiss them — but they
-    // do not move the number.
-    expect(r.uncertainPhrases.length).toBeGreaterThan(0)
+  it('levels the transparent phrases correctly rather than inflating them', () => {
+    // The fix: these are curated at A1, so they neither inflate the text nor
+    // fall through to a derivation that would guess B1.
+    expect(inventory.phrases.get('go to')).toMatchObject({ level: 'A1' })
+    expect(inventory.phrases.get('live in')).toMatchObject({ level: 'A1' })
+    expect(inventory.phrases.get('look at')).toMatchObject({ level: 'A1' })
+  })
+
+  it('separates a transparent phrase from an idiomatic one built of the same words', () => {
+    // Both are two A1 words. Only one is hard.
+    expect(inventory.phrases.get('go to')?.level).toBe('A1')
+    expect(inventory.phrases.get('give up')?.level).toBe('B1')
   })
 })
 

@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs'
 import { loadVocabulary } from '@/inventory/load-vocabulary'
 import { extractMultiwordVerbs } from '@/inventory/load-multiword'
 import { buildLexicalLookup, deriveMultiwordLevel } from '@/inventory/level-multiword'
+import {
+  CURATED_PHRASAL_VERBS,
+  CURATED_PHRASAL_VERB_CONFIDENCE,
+} from '@/inventory/phrasal-verbs'
 import { levelIndex, type CefrLevel } from '@/skill-graph/types'
 import type { PhraseEntry, ProfilerInventory } from './profile'
 
@@ -45,18 +49,27 @@ export function buildProfilerInventory(): ProfilerInventory {
     }
   }
 
-  // WordNet phrases have no stated level, so one is derived. They are treated
-  // as idiomatic, which is right for "give up" and wrong for "go to" — and
-  // nothing in WordNet reliably distinguishes the two. Both glosses and
-  // tagged-sense frequency were tested as discriminators and neither worked.
+  // The curated phrasal verb list. No open-licensed source levels these —
+  // CEFR-J holds only rare literary ones like "eke out" — so the common
+  // everyday verbs are authored. They carry 0.9: expert judgement rather than
+  // corpus evidence, but confident enough to drive the measurement.
   //
-  // So the derived level is carried at low confidence and reported as a
-  // question rather than asserted as a measurement. That keeps genuinely hard
-  // phrases visible for review without inflating the level of simple text.
+  // Transparent phrases are included deliberately. Without an entry, "go to"
+  // and "live in" fall through to derivation and get inflated to B1, which
+  // made a beginner sentence profile as intermediate.
+  for (const [phrase, level] of Object.entries(CURATED_PHRASAL_VERBS)) {
+    if (phrases.has(phrase)) continue // a stated level always wins
+    phrases.set(phrase, { level, confidence: CURATED_PHRASAL_VERB_CONFIDENCE })
+  }
+
+  // Everything else in WordNet's 2,838 multi-word verbs is the long tail —
+  // mostly rare or technical, and rarely seen in learner material. A level is
+  // derived from component words, but carried at low confidence and reported
+  // as a question rather than asserted as a measurement.
   const lookup = buildLexicalLookup(entries.filter((e) => !e.headword.includes(' ')))
 
   for (const phrase of extractMultiwordVerbs(readFileSync(WORDNET_VERBS, 'utf8'))) {
-    if (phrases.has(phrase)) continue // never override a stated level
+    if (phrases.has(phrase)) continue // never override a stated or curated level
 
     const derived = deriveMultiwordLevel(phrase, lookup, { idiomatic: true })
     phrases.set(phrase, { level: derived.level, confidence: derived.confidence })

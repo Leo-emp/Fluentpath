@@ -59,16 +59,21 @@ const MAX_PHRASE_WORDS = 4
 /**
  * Minimum confidence for a level to count toward the measured level of a text.
  *
- * Stated levels score 1; derived ones cap at 0.7. The gap is deliberate.
+ * Three tiers sit either side of this line:
  *
- * The alternative — letting derived levels drive the measurement — was tried
- * and produced exactly the failure this guards against: "I live in a small
- * house. I go to school by bus." profiled as B1, because `live in` and `go to`
- * were both inflated to B1 by an idiomaticity assumption that is true of
- * "give up" and false of them. Two attempts to distinguish the two cases
- * offline (WordNet glosses, tagged-sense frequency) both failed.
+ *   1.0   stated by a source dataset          -> counts
+ *   0.9   curated phrasal verb list           -> counts
+ *   ≤0.7  derived from component words        -> reported, does not count
+ *
+ * The gap is deliberate. Letting derived levels drive the measurement was
+ * tried and produced exactly the failure this guards against: "I live in a
+ * small house. I go to school by bus." profiled as B1, because `live in` and
+ * `go to` were inflated by an idiomaticity assumption true of "give up" and
+ * false of them. Two attempts to tell those cases apart from WordNet data
+ * (definition glosses, tagged-sense frequency) both failed, so the common
+ * phrasal verbs are curated instead and the long tail stays advisory.
  */
-const CONFIDENT_LEVEL_THRESHOLD = 1
+const CONFIDENT_LEVEL_THRESHOLD = 0.8
 
 /**
  * Report what CEFR level a text is, and what sits above a target level.
