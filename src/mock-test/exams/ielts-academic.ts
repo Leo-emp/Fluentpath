@@ -181,7 +181,7 @@ const WRITING: ExamSection = {
       // 20 minutes recommended (not enforced — total section time is).
       durationMinutes: 20,
       prepTimeSeconds: null,
-      nodeIds: ['cando.b2.describe_data', 'strategy.ielts.task1_structure'],
+      nodeIds: ['cando.b2.describe_data', 'strat.ielts.task1_structure'],
     },
     {
       id: 'task2',
@@ -189,7 +189,7 @@ const WRITING: ExamSection = {
       taskRef: 'ielts.task2.essay.1',
       durationMinutes: 40,
       prepTimeSeconds: null,
-      nodeIds: ['cando.b2.write_essay', 'strategy.ielts.task2_structure'],
+      nodeIds: ['cando.b2.write_essay', 'strat.ielts.task2_structure'],
     },
   ],
   allowBacktrack: true,
@@ -212,7 +212,7 @@ const SPEAKING: ExamSection = {
       taskRef: 'ielts.part1.1',
       durationMinutes: 5,
       prepTimeSeconds: null,
-      nodeIds: ['cando.b1.describe_routine', 'strategy.ielts.part1_answers'],
+      nodeIds: ['cando.b1.describe_routine', 'strat.ielts.part1_answers'],
     },
     {
       id: 'part2',
@@ -221,7 +221,7 @@ const SPEAKING: ExamSection = {
       durationMinutes: 4,
       // 60 seconds to read the cue card and prepare.
       prepTimeSeconds: 60,
-      nodeIds: ['cando.b2.give_detailed_account', 'strategy.ielts.part2_structure'],
+      nodeIds: ['cando.b2.give_detailed_account', 'strat.ielts.part2_structure'],
     },
     {
       id: 'part3',
@@ -229,7 +229,7 @@ const SPEAKING: ExamSection = {
       taskRef: 'ielts.part3.1',
       durationMinutes: 5,
       prepTimeSeconds: null,
-      nodeIds: ['cando.b2.discuss_abstract', 'strategy.ielts.part3_extend'],
+      nodeIds: ['cando.b2.discuss_abstract', 'strat.ielts.part3_extend'],
     },
   ],
   allowBacktrack: false,
