@@ -2,3 +2,4 @@
 export * from './skill-graph'
 export * from './mastery'
 export * from './content'
+export * from './learners'
