@@ -1,5 +1,6 @@
 import { sqliteTable, text, real, integer, primaryKey, index } from 'drizzle-orm/sqlite-core'
 import { skillNodes } from './skill-graph'
+import { learners } from './learners'
 
 /**
  * Per-learner, per-node mastery state.
@@ -12,7 +13,11 @@ import { skillNodes } from './skill-graph'
 export const learnerMastery = sqliteTable(
   'learner_mastery',
   {
-    learnerId: text('learner_id').notNull(),
+    // FK to the learners table. CASCADE on delete: if a learner is removed,
+    // all their mastery records go with them.
+    learnerId: text('learner_id')
+      .notNull()
+      .references(() => learners.id, { onDelete: 'cascade' }),
 
     nodeId: text('node_id')
       .notNull()
