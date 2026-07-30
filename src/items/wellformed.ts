@@ -106,7 +106,7 @@ export function checkWellFormed(item: McqItem): ItemIssue[] {
  * wrong. Silence means "no problem found", not "definitely correct" — this
  * only recognises a handful of patterns.
  */
-function findAuxiliaryProblem(text: string): string | null {
+export function findAuxiliaryProblem(text: string): string | null {
   const words = text.toLowerCase().split(/\s+/).filter(Boolean)
 
   for (let i = 0; i < words.length - 1; i++) {

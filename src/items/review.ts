@@ -5,22 +5,38 @@ import { checkMisconceptions } from './misconceptions'
 import { checkWellFormed } from './wellformed'
 import { checkGiveaway } from './giveaway'
 import { checkShape } from './shape'
+import { checkAnswerKey } from './answer-key'
+import { checkTargeting } from './targeting'
+import { checkDuplicate } from './duplicate'
 import type { ItemIssue, ItemReview, McqItem } from './types'
 
-/**
- * Run every gate over one item.
- *
- * The gates are deliberately separate and each was built from a real failure
- * rather than from imagining what might go wrong. An item passes only when
- * nothing rejects it; warnings are surfaced but do not block.
- */
-export function reviewItem(item: McqItem, inventory: ProfilerInventory): ItemReview {
+// Context needed by the review pipeline. The inventory is always
+// required; other fields enable optional gates.
+export interface ReviewContext {
+  inventory: ProfilerInventory
+  // Stems of items already in the bank. When provided, the duplicate
+  // gate compares the candidate against them. When omitted (e.g. in
+  // unit tests that don't need dedup), the gate is skipped.
+  existingStems?: string[]
+}
+
+// Run every gate over one item.
+//
+// The gates are deliberately separate and each was built from a real
+// failure rather than from imagining what might go wrong. An item passes
+// only when nothing rejects it; warnings are surfaced but do not block.
+export function reviewItem(item: McqItem, context: ReviewContext): ItemReview {
   const issues: ItemIssue[] = [
+    // Cheapest gates first, all run regardless — an item collects every issue.
     ...checkShape(item),
     ...checkWellFormed(item),
     ...checkMisconceptions(item),
     ...checkGiveaway(item),
-    ...checkLevel(item, inventory),
+    ...checkAnswerKey(item),
+    ...checkTargeting(item),
+    ...checkLevel(item, context.inventory),
+    // Duplicate gate only runs when a bank is provided.
+    ...(context.existingStems ? checkDuplicate(item, context.existingStems) : []),
   ]
 
   return {
@@ -29,21 +45,10 @@ export function reviewItem(item: McqItem, inventory: ProfilerInventory): ItemRev
   }
 }
 
-/**
- * Reject an item whose own language sits above the level it targets.
- *
- * An A2 item written in B2 English tests reading comprehension the learner
- * does not have, so a wrong answer says nothing about the thing being taught.
- * This is Quality bar 1a applied to items rather than explanations.
- *
- * Only confidently-levelled vocabulary counts — derived phrase estimates are
- * reported as warnings, never used to reject an item.
- */
+// Reject an item whose own language sits above the level it targets.
 function checkLevel(item: McqItem, inventory: ProfilerInventory): ItemIssue[] {
   const issues: ItemIssue[] = []
 
-  // The stem carries the reading load; the options are usually the target
-  // language itself and may legitimately sit at level.
   const profile = profileText(item.stem, inventory, item.level)
 
   for (const above of profile.aboveLevel) {

@@ -134,7 +134,7 @@ describe('golden good items — must all pass', () => {
 
   for (const { label, item } of goodItems) {
     it(label, () => {
-      const review = reviewItem(item, inventory)
+      const review = reviewItem(item, { inventory })
       if (!review.passed) {
         const reasons = review.issues
           .filter((i) => i.severity === 'reject')
@@ -271,6 +271,46 @@ describe('golden bad items — must all be rejected with the right code', () => 
       }),
     },
     {
+      label: 'wrong answer key: correct option is ungrammatical',
+      expectedCode: 'WRONG_KEY',
+      item: mcq({
+        stem: 'I ______ my homework.',
+        options: [
+          { text: 'have finish', misconception: null },
+          { text: 'finished', misconception: 'uses past simple for a just-completed action' },
+          { text: 'was finishing', misconception: 'treats a completed action as ongoing' },
+          { text: 'am finishing', misconception: 'treats a completed action as happening now' },
+        ],
+      }),
+    },
+    {
+      label: 'misconception mismatch: claims past simple but option is present perfect',
+      expectedCode: 'MISCONCEPTION_MISMATCH',
+      item: mcq({
+        stem: 'She ______ to many countries.',
+        options: [
+          { text: 'has been', misconception: null },
+          { text: 'has gone', misconception: 'uses past simple for a life experience' },
+          { text: 'was going', misconception: 'treats a life summary as a continuous action' },
+          { text: 'went', misconception: 'uses past simple for a life experience with no time frame' },
+        ],
+      }),
+    },
+    {
+      label: 'off-target: claims present_perfect but all options are past simple',
+      expectedCode: 'OFF_TARGET',
+      item: mcq({
+        nodeIds: ['gram.b1.present_perfect'],
+        stem: 'They ______ home early.',
+        options: [
+          { text: 'went', misconception: null },
+          { text: 'walked', misconception: 'uses a different past-tense verb than expected' },
+          { text: 'ran', misconception: 'uses running rather than going home' },
+          { text: 'drove', misconception: 'uses driving rather than going home' },
+        ],
+      }),
+    },
+    {
       label: 'above-level vocabulary in A1 stem',
       expectedCode: 'ABOVE_LEVEL',
       item: mcq({
@@ -289,7 +329,7 @@ describe('golden bad items — must all be rejected with the right code', () => 
 
   for (const { label, item, expectedCode } of badItems) {
     it(label, () => {
-      const review = reviewItem(item, inventory)
+      const review = reviewItem(item, { inventory })
       expect(review.passed, `Expected rejection but item passed`).toBe(false)
       const codes = review.issues.filter((i) => i.severity === 'reject').map((i) => i.code)
       expect(codes, `Expected code ${expectedCode} in ${codes.join(', ')}`).toContain(expectedCode)
@@ -312,7 +352,7 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'reads', misconception: 'uses present simple for a specific recent achievement' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     const malformed = review.issues.filter((i) => i.code === 'MALFORMED_OPTION')
     expect(malformed, '"has read" should not be flagged as malformed').toHaveLength(0)
   })
@@ -328,7 +368,7 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'is cutting', misconception: 'places a past event in the present' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     const malformed = review.issues.filter((i) => i.code === 'MALFORMED_OPTION')
     expect(malformed).toHaveLength(0)
   })
@@ -343,7 +383,7 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'am losing', misconception: 'places a completed event in the present moment' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     expect(review.issues.some((i) => i.code === 'MALFORMED_OPTION')).toBe(true)
   })
 
@@ -358,7 +398,7 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'go', misconception: 'omits the modal verb entirely' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     const malformed = review.issues.filter((i) => i.code === 'MALFORMED_OPTION')
     expect(malformed.length).toBeGreaterThanOrEqual(2)
   })
@@ -374,9 +414,38 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'works', misconception: 'uses simple present for a situation with a specific start point' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     const giveaways = review.issues.filter((i) => i.code === 'STEM_GIVEAWAY')
     expect(giveaways).toHaveLength(0)
+  })
+
+  it('accepts "has read" in answer-key verification — invariant verb', () => {
+    const item = mcq({
+      stem: 'She ______ three books this month.',
+      options: [
+        { text: 'has read', misconception: null },
+        { text: 'read', misconception: 'uses past simple for an unfinished time period' },
+        { text: 'was reading', misconception: 'treats a quantity achievement as a continuous action' },
+        { text: 'reads', misconception: 'uses present simple for a recent achievement' },
+      ],
+    })
+    const review = reviewItem(item, { inventory })
+    expect(review.issues.some((i) => i.code === 'WRONG_KEY')).toBe(false)
+  })
+
+  it('skips targeting gate for cando nodes', () => {
+    const item = mcq({
+      nodeIds: ['cando.b1.understand_monologue'],
+      stem: 'She ______ the lecture.',
+      options: [
+        { text: 'understood', misconception: null },
+        { text: 'understands', misconception: 'uses present for a past event' },
+        { text: 'understanding', misconception: 'uses gerund as a finite verb' },
+        { text: 'understand', misconception: 'uses bare form for a past event' },
+      ],
+    })
+    const review = reviewItem(item, { inventory })
+    expect(review.issues.some((i) => i.code === 'OFF_TARGET')).toBe(false)
   })
 
   it('length tell is a warning, not a rejection', () => {
@@ -389,7 +458,7 @@ describe('edge cases the pipeline has historically gotten wrong', () => {
         { text: 'doing', misconception: 'uses gerund as a finite verb' },
       ],
     })
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, { inventory })
     const tells = review.issues.filter((i) => i.code === 'LENGTH_TELL')
     expect(tells.length).toBeGreaterThan(0)
     expect(tells[0]!.severity).toBe('warn')

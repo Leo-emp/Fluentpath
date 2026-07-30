@@ -42,7 +42,7 @@ const QUESTION_TWO: McqItem = {
 }
 
 describe('question 1 — the broken-English distractor', () => {
-  const review = reviewItem(QUESTION_ONE, inventory)
+  const review = reviewItem(QUESTION_ONE, { inventory })
   const codes = review.issues.map((i) => i.code)
 
   it('is rejected', () => {
@@ -64,7 +64,7 @@ describe('question 1 — the broken-English distractor', () => {
 })
 
 describe('question 2 — answerable without understanding', () => {
-  const review = reviewItem(QUESTION_TWO, inventory)
+  const review = reviewItem(QUESTION_TWO, { inventory })
   const codes = review.issues.map((i) => i.code)
 
   it('is rejected', () => {
@@ -98,7 +98,7 @@ describe('the repaired versions pass', () => {
       ],
       correctIndex: 1,
     }
-    const review = reviewItem(repaired, inventory)
+    const review = reviewItem(repaired, { inventory })
     expect(review.passed, JSON.stringify(review.issues, null, 2)).toBe(true)
   })
 
@@ -122,7 +122,7 @@ describe('the repaired versions pass', () => {
       ],
       correctIndex: 0,
     }
-    const review = reviewItem(repaired, inventory)
+    const review = reviewItem(repaired, { inventory })
     expect(review.passed, JSON.stringify(review.issues, null, 2)).toBe(true)
   })
 })

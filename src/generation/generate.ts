@@ -3,6 +3,7 @@ import type { SkillNode } from '@/skill-graph/types'
 import type { ProfilerInventory } from '@/profiler/profile'
 import type { McqItem, ItemReview } from '@/items/types'
 import { reviewItem } from '@/items/review'
+import type { ReviewContext } from '@/items/review'
 import { buildConstraints, renderConstraints } from './constraints'
 import type { GenerationProvider, GeneratedMcq } from './provider'
 import { parseModelOutput } from './provider'
@@ -19,6 +20,8 @@ export interface GenerateItemRequest {
   node: SkillNode
   level?: CefrLevel
   itemId: string
+  // Stems already in the item bank, for duplicate detection.
+  existingStems?: string[]
 }
 
 export type AttemptOutcome =
@@ -61,6 +64,12 @@ export async function generateItem(
   const prompt = renderConstraints(constraints) + '\n\nRespond with a single JSON object. No prose.'
   const attempts: AttemptOutcome[] = []
 
+  // Build the review context once — reused on every attempt.
+  const reviewContext: ReviewContext = {
+    inventory,
+    existingStems: request.existingStems,
+  }
+
   for (let i = 0; i <= MAX_RETRIES; i++) {
     const response = await provider.generate({ prompt, maxTokens: MAX_TOKENS })
     const parsed = response.parsed ?? parseModelOutput(response.raw)
@@ -71,7 +80,7 @@ export async function generateItem(
     }
 
     const item = toMcqItem(parsed, request.itemId, level)
-    const review = reviewItem(item, inventory)
+    const review = reviewItem(item, reviewContext)
 
     if (!review.passed) {
       attempts.push({ kind: 'gate_failure', item, review })

@@ -22,13 +22,15 @@ function item(over: Partial<McqItem> = {}): McqItem {
   }
 }
 
-const codes = (i: McqItem) => reviewItem(i, inventory).issues.map((x) => x.code)
+const codes = (i: McqItem) => reviewItem(i, { inventory }).issues.map((x) => x.code)
 
 describe('a well-built item', () => {
   it('passes every gate', () => {
-    const review = reviewItem(item(), inventory)
+    const review = reviewItem(item(), { inventory })
     expect(review.passed, JSON.stringify(review.issues, null, 2)).toBe(true)
-    expect(review.issues).toHaveLength(0)
+    // Tense-contrast items may get AMBIGUOUS_KEY warnings (distractors are
+    // grammatically valid), but no rejects.
+    expect(review.issues.filter((i) => i.severity === 'reject')).toHaveLength(0)
   })
 })
 
@@ -68,7 +70,7 @@ describe('length tell', () => {
         { text: 'losing', misconception: 'treats a completed action as ongoing' },
       ],
     })
-    const review = reviewItem(telling, inventory)
+    const review = reviewItem(telling, { inventory })
     expect(review.issues.map((i) => i.code)).toContain('LENGTH_TELL')
     // A tell is a warning, not a rejection — the item may still be usable.
     expect(review.issues.find((i) => i.code === 'LENGTH_TELL')?.severity).toBe('warn')
@@ -104,6 +106,6 @@ describe('the gates compose', () => {
     expect(found.has('MALFORMED_OPTION')).toBe(true)
     expect(found.has('VAGUE_MISCONCEPTION')).toBe(true)
     expect(found.has('NO_MISCONCEPTION')).toBe(true)
-    expect(reviewItem(bad, inventory).passed).toBe(false)
+    expect(reviewItem(bad, { inventory }).passed).toBe(false)
   })
 })

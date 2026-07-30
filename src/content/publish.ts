@@ -97,7 +97,7 @@ export async function publishItemVersion(
     level: item.level as McqItem['level'],
   }
 
-  const review = reviewItem(mcq, inventory)
+  const review = reviewItem(mcq, { inventory })
   if (!review.passed) throw new PublishRejectedError(versionId, review)
 
   await setCurrentVersion(db, version.itemId, versionId, now)

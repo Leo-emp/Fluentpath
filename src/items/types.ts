@@ -48,6 +48,11 @@ export type ItemIssueCode =
   | 'STEM_GIVEAWAY'
   | 'LENGTH_TELL'
   | 'ABOVE_LEVEL'
+  | 'WRONG_KEY'
+  | 'AMBIGUOUS_KEY'
+  | 'MISCONCEPTION_MISMATCH'
+  | 'NEAR_DUPLICATE'
+  | 'OFF_TARGET'
 
 export interface ItemIssue {
   code: ItemIssueCode
