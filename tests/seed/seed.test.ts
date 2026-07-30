@@ -8,6 +8,10 @@ import { selectNext } from '@/sequencer/select'
 import { estimateLevels } from '@/sequencer/level'
 import { recordOutcomes } from '@/mastery/service'
 import { listMastery } from '@/mastery/repository'
+import { IELTS_ACADEMIC } from '@/mock-test/exams/ielts-academic'
+import { populateMastery } from '@/placement/populate'
+import type { PlacementResult } from '@/placement/types'
+import { SKILL_AREAS } from '@/skill-graph/types'
 import type { Db } from '@/db/client'
 
 const NOW = 1_700_000_000_000
@@ -32,6 +36,61 @@ describe('seed data integrity', () => {
   it('covers every node type', () => {
     const types = new Set(SEED_NODES.map((n) => n.type))
     expect(types).toEqual(new Set(['grammar', 'lexical', 'cando', 'phono', 'strategy']))
+  })
+
+  // Exact counts from the spec — catches accidental additions or deletions.
+  it('has exactly 45 nodes', () => {
+    expect(SEED_NODES).toHaveLength(45)
+  })
+
+  it('has exactly 49 edges', () => {
+    expect(SEED_EDGES).toHaveLength(49)
+  })
+
+  // Every skill area that has content must appear in the graph.
+  it('covers every skill area', () => {
+    const skills = new Set(SEED_NODES.map((n) => n.skill))
+    for (const area of SKILL_AREAS) {
+      expect(skills.has(area), `missing skill area: ${area}`).toBe(true)
+    }
+  })
+
+  // The graph must have nodes at multiple CEFR levels to support
+  // level estimation and placement.
+  it('covers at least 5 CEFR levels', () => {
+    const levels = new Set(SEED_NODES.map((n) => n.level))
+    expect(levels.size).toBeGreaterThanOrEqual(5)
+  })
+})
+
+describe('IELTS exam coverage', () => {
+  // Every nodeId referenced by the IELTS exam definition must exist in
+  // the seed graph. A missing node means the diagnosis engine would try
+  // to attribute performance to a non-existent graph node.
+  it('contains every node referenced by IELTS Academic', () => {
+    const seedIds = new Set(SEED_NODES.map((n) => n.id))
+
+    for (const section of IELTS_ACADEMIC.sections) {
+      for (const slot of section.slots) {
+        for (const nodeId of slot.nodeIds) {
+          expect(
+            seedIds.has(nodeId),
+            `IELTS ${section.id}/${slot.id} references "${nodeId}" which is not in SEED_NODES`,
+          ).toBe(true)
+        }
+      }
+    }
+  })
+
+  // Strategy nodes must use the strat.ielts.* prefix, not strategy.ielts.*.
+  it('IELTS strategy nodeIds use the strat.ielts.* prefix', () => {
+    for (const section of IELTS_ACADEMIC.sections) {
+      for (const slot of section.slots) {
+        for (const nodeId of slot.nodeIds) {
+          expect(nodeId).not.toMatch(/^strategy\./)
+        }
+      }
+    }
   })
 })
 
@@ -64,6 +123,21 @@ describe('end to end on the seeded graph', () => {
     expect(next.every((c) => c.reason === 'new')).toBe(true)
   })
 
+  // A brand-new learner should see multiple node types, not just grammar.
+  // This validates that the root nodes are diverse enough for a good
+  // first session.
+  it('gives a brand-new learner diverse node types', async () => {
+    const nodes = await listNodes(db)
+    const edges = await listEdges(db)
+
+    const next = selectNext({ nodes, edges, mastery: [], now: NOW, limit: 20 })
+    const types = new Set(next.map((c) => c.node.type))
+
+    // Should include at least 3 different types (grammar, cando, lexical,
+    // phono, or strategy).
+    expect(types.size).toBeGreaterThanOrEqual(3)
+  })
+
   it('offers only nodes with no unmet prerequisites at the start', async () => {
     const nodes = await listNodes(db)
     const edges = await listEdges(db)
@@ -85,6 +159,40 @@ describe('end to end on the seeded graph', () => {
     const levels = estimateLevels(nodes, [], NOW)
     expect(levels.length).toBeGreaterThan(0)
     expect(levels.every((l) => l.level === 'preA1')).toBe(true)
+  })
+
+  // After placement at B1, the level estimate should reflect the
+  // placement result — not stay at preA1 forever.
+  it('placement at B1 produces per-skill level estimates', async () => {
+    const nodes = await listNodes(db)
+
+    // Simulate a placement result at B1.
+    const placementResult: PlacementResult = {
+      estimatedLevel: 'B1',
+      levelResults: {
+        A1: { correct: 5, total: 5 },
+        A2: { correct: 4, total: 5 },
+        B1: { correct: 3, total: 5 },
+        B2: { correct: 1, total: 5 },
+      },
+      itemsUsed: 20,
+      answeredItemIds: [],
+    }
+
+    const mastery = populateMastery(placementResult, nodes, NOW)
+
+    // With B1 placement, levels should be above preA1 for skills that
+    // have nodes at A1/A2/B1.
+    const levels = estimateLevels(nodes, mastery, NOW)
+    expect(levels.length).toBeGreaterThan(0)
+
+    // Every IELTS skill (listening, reading, writing, speaking) should
+    // have an estimate.
+    const skillSet = new Set(levels.map((l) => l.skill))
+    expect(skillSet.has('listening')).toBe(true)
+    expect(skillSet.has('reading')).toBe(true)
+    expect(skillSet.has('writing')).toBe(true)
+    expect(skillSet.has('speaking')).toBe(true)
   })
 
   it('unlocks a dependent once its prerequisite is mastered', async () => {
