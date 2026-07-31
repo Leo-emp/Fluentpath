@@ -4,12 +4,18 @@ import { upsertNodes } from '@/skill-graph/repository'
 import { getMastery, listMastery, saveMastery } from '@/mastery/repository'
 import type { Db } from '@/db/client'
 import type { MasteryRecord } from '@/mastery/types'
+import { learners } from '@/db/schema'
 
 const NOW = 1_700_000_000_000
 let db: Db
 
 beforeEach(async () => {
   db = await makeTestDb()
+  // Insert learner rows so the FK on learner_mastery.learner_id is satisfied.
+  await db.insert(learners).values([
+    { id: 'u1', email: 'u1@test.com', createdAt: NOW, updatedAt: NOW },
+    { id: 'u2', email: 'u2@test.com', createdAt: NOW, updatedAt: NOW },
+  ])
   await upsertNodes(
     db,
     [

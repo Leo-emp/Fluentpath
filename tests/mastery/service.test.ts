@@ -5,6 +5,7 @@ import { recordOutcomes } from '@/mastery/service'
 import { getMastery, listMastery } from '@/mastery/repository'
 import type { Db } from '@/db/client'
 import type { SkillNode } from '@/skill-graph/types'
+import { learners } from '@/db/schema'
 
 const NOW = 1_700_000_000_000
 let db: Db
@@ -15,6 +16,11 @@ function node(id: string): SkillNode {
 
 beforeEach(async () => {
   db = await makeTestDb()
+  // Insert learner rows so the FK on learner_mastery.learner_id is satisfied.
+  await db.insert(learners).values([
+    { id: 'u1', email: 'u1@test.com', createdAt: NOW, updatedAt: NOW },
+    { id: 'u2', email: 'u2@test.com', createdAt: NOW, updatedAt: NOW },
+  ])
   await upsertNodes(db, [node('n1'), node('n2'), node('n3')], NOW)
 })
 
@@ -86,6 +92,8 @@ describe('recordOutcomes', () => {
     )
 
     const dbB = await makeTestDb()
+    // Second DB also needs a learner row for the FK.
+    await dbB.insert(learners).values({ id: 'u1', email: 'u1@test.com', createdAt: NOW, updatedAt: NOW })
     await upsertNodes(dbB, [node('n1')], NOW)
     const rightThenWrong = await recordOutcomes(
       dbB,

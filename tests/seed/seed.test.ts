@@ -12,6 +12,7 @@ import { IELTS_ACADEMIC } from '@/mock-test/exams/ielts-academic'
 import { populateMastery } from '@/placement/populate'
 import type { PlacementResult } from '@/placement/types'
 import { SKILL_AREAS } from '@/skill-graph/types'
+import { learners } from '@/db/schema'
 import type { Db } from '@/db/client'
 
 const NOW = 1_700_000_000_000
@@ -21,6 +22,8 @@ let db: Db
 
 beforeEach(async () => {
   db = await makeTestDb()
+  // Insert a learner row so FK on learner_mastery.learner_id is satisfied.
+  await db.insert(learners).values({ id: 'u1', email: 'u1@test.com', createdAt: NOW, updatedAt: NOW })
 })
 
 describe('seed data integrity', () => {
