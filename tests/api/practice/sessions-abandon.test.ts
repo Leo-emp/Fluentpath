@@ -12,11 +12,11 @@ let db: Db
 
 const PLAN = { items: [], nodeIds: ['gram.a1.be'], estimatedMinutes: 5 }
 
-function postRequest(id: string): NextRequest {
+function postRequest(id: string, learnerId = 'learner.1'): NextRequest {
   return new NextRequest(`http://localhost/api/practice/sessions/${id}/abandon`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ learnerId }),
   })
 }
 
@@ -52,5 +52,28 @@ describe('POST /api/practice/sessions/[id]/abandon', () => {
   it('returns 404 for unknown session', async () => {
     const res = await POST(postRequest('ghost'), makeParams('ghost'))
     expect(res.status).toBe(404)
+  })
+
+  it('returns 403 when learnerId does not match session owner', async () => {
+    const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
+
+    const res = await POST(postRequest(sessionId, 'evil.attacker'), makeParams(sessionId))
+    expect(res.status).toBe(403)
+
+    // Session should remain in_progress.
+    const session = await getPracticeSession(db, sessionId)
+    expect(session!.status).toBe('in_progress')
+  })
+
+  it('returns 400 when learnerId is missing', async () => {
+    const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
+
+    const req = new NextRequest(`http://localhost/api/practice/sessions/${sessionId}/abandon`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    const res = await POST(req, makeParams(sessionId))
+    expect(res.status).toBe(400)
   })
 })

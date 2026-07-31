@@ -198,6 +198,16 @@ export interface RubricCriterion {
  * A complete rubric — the data structure the scoring engine uses to
  * assemble the LLM prompt and validate the model's output.
  */
+/**
+ * A curated model answer at a specific band level, with commentary
+ * explaining what makes it that level and what differs from adjacent bands.
+ */
+export interface ModelAnswer {
+  band: number
+  text: string
+  commentary: string
+}
+
 export interface WritingRubric {
   id: string
   name: string
@@ -205,6 +215,9 @@ export interface WritingRubric {
   criteria: RubricCriterion[]
   // The scoring scale. step is 0.5 for IELTS (half-bands), 1 for others.
   scoreRange: { min: number; max: number; step: number }
+  // Curated model answers at 2-3 band levels with named differences.
+  // Empty until content is authored for each rubric.
+  modelAnswers?: ModelAnswer[]
 }
 
 // ---------------------------------------------------------------------------

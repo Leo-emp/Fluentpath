@@ -26,6 +26,7 @@ import { validateResponse } from './validate'
 import { buildScoringPrompt } from './prompt'
 import { parseScoringOutput, type ParsedScore } from './parse-score'
 import { checkFeedbackQuality } from './feedback-gates'
+import { extractWritingFeatures } from './features'
 
 // Match the MCQ pipeline: 3 retries (4 total attempts).
 const MAX_RETRIES = 3
@@ -83,9 +84,13 @@ export async function scoreWriting(
     }
   }
 
+  // Extract deterministic features BEFORE calling the LLM — same
+  // pattern as the speaking pipeline. These become facts in the prompt.
+  const features = extractWritingFeatures(response.text, inventory, task.level)
+
   // Build the prompt once — it doesn't change between retries because
   // we send a fresh prompt each time (no rejected output in context).
-  const prompt = buildScoringPrompt(response, task, rubric, inventory)
+  const prompt = buildScoringPrompt(response, task, rubric, inventory, features)
   const wordCount = validation.wordCount
 
   // Try up to MAX_RETRIES + 1 times (initial + retries).

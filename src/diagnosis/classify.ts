@@ -171,6 +171,46 @@ function checkProductionGap(
   return null
 }
 
+/**
+ * Detect confusable pairs — recurring misconception patterns that
+ * reveal the learner keeps making the SAME kind of mistake.
+ *
+ * E.g. repeatedly choosing present-perfect distractors on past-simple
+ * items means "confuses present perfect with past simple", not just
+ * "past simple is weak".
+ */
+export interface ConfusablePair {
+  nodeId: string
+  misconception: string
+  count: number
+}
+
+export function detectConfusablePairs(outcomes: NodeOutcome[]): ConfusablePair[] {
+  // Count misconception occurrences per node.
+  const counts = new Map<string, Map<string, number>>()
+
+  for (const outcome of outcomes) {
+    if (outcome.correct || !outcome.selectedMisconception) continue
+    const nodeMap = counts.get(outcome.nodeId) ?? new Map()
+    const current = nodeMap.get(outcome.selectedMisconception) ?? 0
+    nodeMap.set(outcome.selectedMisconception, current + 1)
+    counts.set(outcome.nodeId, nodeMap)
+  }
+
+  const pairs: ConfusablePair[] = []
+  for (const [nodeId, misconceptions] of counts) {
+    for (const [misconception, count] of misconceptions) {
+      // Only report if the same misconception appears 2+ times —
+      // once could be a guess, twice is a pattern.
+      if (count >= 2) {
+        pairs.push({ nodeId, misconception, count })
+      }
+    }
+  }
+
+  return pairs.sort((a, b) => b.count - a.count)
+}
+
 // Formatting helpers for human-readable evidence strings.
 function formatPercent(n: number): string {
   return `${Math.round(n * 100)}%`

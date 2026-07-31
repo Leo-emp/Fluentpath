@@ -89,4 +89,37 @@ describe('extractPronunciation', () => {
     expect(f.lowConfidenceWords[0]!.startMs).toBe(500)
     expect(f.lowConfidenceWords[0]!.endMs).toBe(1200)
   })
+
+  it('returns null phonemeAccuracy when no phoneme data', () => {
+    const stt: SttResult = {
+      transcript: 'hello',
+      words: [{ word: 'hello', startMs: 0, endMs: 400, confidence: 0.9 }],
+      durationMs: 500,
+      phonemes: null,
+    }
+    const f = extractPronunciation(stt)
+    expect(f.phonemeAccuracy).toBeNull()
+    expect(f.mispronounced).toHaveLength(0)
+  })
+
+  it('computes phoneme accuracy when phoneme data is available', () => {
+    const stt: SttResult = {
+      transcript: 'think',
+      words: [{ word: 'think', startMs: 0, endMs: 500, confidence: 0.7 }],
+      durationMs: 600,
+      phonemes: [
+        { phoneme: 'θ', expected: 'θ', accuracy: 0.3, word: 'think' },
+        { phoneme: 'ɪ', expected: 'ɪ', accuracy: 0.9, word: 'think' },
+        { phoneme: 'ŋ', expected: 'ŋ', accuracy: 0.8, word: 'think' },
+        { phoneme: 'k', expected: 'k', accuracy: 0.95, word: 'think' },
+      ],
+    }
+    const f = extractPronunciation(stt)
+    expect(f.phonemeAccuracy).toBeGreaterThan(0)
+    expect(f.phonemeAccuracy).toBeLessThan(1)
+    // θ at 0.3 is below the 0.5 threshold — should be flagged.
+    expect(f.mispronounced).toHaveLength(1)
+    expect(f.mispronounced[0]!.phoneme).toBe('θ')
+    expect(f.mispronounced[0]!.word).toBe('think')
+  })
 })

@@ -248,9 +248,15 @@ describe('generateItem', () => {
     expect(result.attempts[1]!.kind).toBe('success')
   })
 
-  it('fail-open: LLM returns garbage, item still passes', async () => {
-    const genProvider = sequenceProvider([GOOD_MCQ])
-    const qualityProvider = sequenceProvider(['I cannot evaluate this.'])
+  it('fail-closed: LLM returns garbage, item is rejected', async () => {
+    // All 4 generation attempts get garbage quality reviews.
+    const genProvider = sequenceProvider([GOOD_MCQ, GOOD_MCQ, GOOD_MCQ, GOOD_MCQ])
+    const qualityProvider = sequenceProvider([
+      'I cannot evaluate this.',
+      'I cannot evaluate this.',
+      'I cannot evaluate this.',
+      'I cannot evaluate this.',
+    ])
 
     const result = await generateItem(genProvider, inventory, {
       node: node(),
@@ -258,10 +264,9 @@ describe('generateItem', () => {
       qualityProvider,
     })
 
-    expect(result.item).not.toBeNull()
-    expect(result.review!.passed).toBe(true)
-    expect(result.attempts).toHaveLength(1)
-    expect(result.attempts[0]!.kind).toBe('success')
+    // Unparseable quality review = reject. All attempts fail the
+    // LLM review, so the final result has no passing item.
+    expect(result.review!.passed).toBe(false)
   })
 
   it('LLM warnings appear in the review but do not block', async () => {

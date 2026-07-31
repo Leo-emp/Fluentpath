@@ -25,15 +25,20 @@ export async function POST(
     }
 
     const learnerId = requireString(body, 'learnerId')
-    const rawOutcomes = requireArray(body, 'outcomes')
 
-    // Cast the raw outcomes — recordOutcomes validates nodeIds exist.
+    // Ownership check — the caller must own this session.
+    if (session.learnerId !== learnerId) {
+      return jsonError(403, 'You do not own this session.')
+    }
+
+    const rawOutcomes = requireArray(body, 'outcomes')
     const outcomes = rawOutcomes as AssessedOutcome[]
 
-    // Mark the session as completed, then write mastery.
+    // Record mastery FIRST — if this fails the session stays in_progress
+    // and the learner can retry. Completing first would lose their work.
     const now = Date.now()
-    await completePracticeSession(db, id, now)
     const mastery = await recordOutcomes(db, learnerId, outcomes, now)
+    await completePracticeSession(db, id, now)
 
     return jsonOk({ mastery })
   } catch (err) {

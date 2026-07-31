@@ -44,6 +44,9 @@ export interface NodeOutcome {
   latencyMs: number
   // Index into PerformanceRecord's flattened response list.
   responseIndex: number
+  // The misconception tag from the selected distractor (MCQ only).
+  // Null when the learner answered correctly or the item isn't MCQ.
+  selectedMisconception?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -142,6 +145,9 @@ export interface ActionPlan {
   steps: RemediationStep[]
   totalEstimatedMinutes: number
   gapCount: number
+  // Prerequisite nodes that were never tested — potential hidden
+  // foundations that might explain the visible gaps.
+  untestedPrerequisites?: string[]
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +199,9 @@ export interface Diagnosis {
   gaps: ClassifiedGap[]
   actionPlan: ActionPlan
   bandImpacts: BandImpact[]
+  // Recurring misconception patterns — the learner keeps choosing
+  // the same wrong answer type. Empty when no patterns detected.
+  confusablePairs: import('./classify').ConfusablePair[]
 }
 
 // ---------------------------------------------------------------------------

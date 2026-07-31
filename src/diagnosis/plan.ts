@@ -23,45 +23,91 @@ import type {
   ActionPlan,
   RootCause,
 } from './types'
-import type { SkillEdge } from '@/skill-graph/types'
+import type { SkillEdge, SkillNode } from '@/skill-graph/types'
+import type { MasteryRecord } from '@/mastery/types'
 
 // Default maximum steps in an action plan. Can be overridden.
 const DEFAULT_MAX_STEPS = 10
 
-// Estimated minutes per step, keyed by root cause.
-// Calibrated for one focused study session per gap.
-const TIME_ESTIMATES: Record<RootCause, number> = {
-  knowledge: 30, // Study the concept + practice exercises.
-  processing: 15, // Timed drills — the concept is known, just slow.
-  strategy: 20, // Technique practice with worked examples.
-  production: 25, // Output exercises (writing/speaking practice).
+// Base minutes per step, scaled by gap severity.
+const BASE_TIME: Record<RootCause, number> = {
+  knowledge: 20,
+  processing: 10,
+  strategy: 15,
+  production: 20,
 }
 
-// Activity descriptions per root cause. Template uses the node title.
-const ACTIVITY_TEMPLATES: Record<RootCause, (title: string) => string> = {
-  knowledge: (title) =>
-    `Study ${title}: review the rules and patterns, then complete targeted practice exercises to build understanding.`,
-  processing: (title) =>
-    `Speed drill for ${title}: timed practice to build automatic recall — the concept is understood but needs faster access under pressure.`,
-  strategy: (title) =>
-    `Technique practice for ${title}: work through exam-style tasks focusing on approach, structure, and time management.`,
-  production: (title) =>
-    `Production practice for ${title}: writing and speaking exercises — the form is recognised but needs active output practice to become producible.`,
+// Estimate time based on root cause AND how severe the gap is.
+function estimateTime(rootCause: RootCause, accuracy: number): number {
+  const base = BASE_TIME[rootCause]
+  // Worse accuracy = more time needed. Scale from 1x to 2x.
+  const severityMultiplier = 1 + (1 - accuracy)
+  return Math.round(base * severityMultiplier / 5) * 5
+}
+
+// Generate a specific activity description from the gap's actual data.
+function generateActivity(gap: ClassifiedGap): string {
+  const { nodeTitle, rootCause, accuracy, nodeType, level } = gap
+  const pct = Math.round(accuracy * 100)
+
+  switch (rootCause) {
+    case 'knowledge':
+      return (
+        `Study "${nodeTitle}" (${level}): you got ${pct}% correct, which means the ` +
+        (nodeType === 'grammar'
+          ? `pattern isn't learned yet. Review the rule with examples, then do fill-in-blank exercises until you can produce it without checking.`
+          : nodeType === 'lexical'
+            ? `vocabulary isn't sticking. Study these words in context sentences, then practise recalling them from meaning (not from a word list).`
+            : `concept needs building. Work through guided examples, then try exercises that require you to apply it.`)
+      )
+
+    case 'processing':
+      return (
+        `Speed drill for "${nodeTitle}" (${level}): you know this (${pct}% correct) but ` +
+        `you're too slow under time pressure. Do timed exercises — answer within 5 seconds ` +
+        `per item. The goal is automatic recall, not re-learning.`
+      )
+
+    case 'strategy':
+      return (
+        `Technique practice for "${nodeTitle}": your accuracy is ${pct}%. Work through ` +
+        `two complete exam-style tasks, then compare your approach against the model procedure ` +
+        `step by step. Focus on time allocation and task structure, not language.`
+      )
+
+    case 'production':
+      return (
+        `Production practice for "${nodeTitle}" (${level}): you recognise this form ` +
+        `(receptive tasks are fine) but can't produce it yet (${pct}% on output tasks). ` +
+        `Do writing and speaking exercises that force you to use it — ` +
+        (nodeType === 'grammar'
+          ? `write 5 sentences using this structure, then say them aloud.`
+          : `use these words in your own sentences about familiar topics, then describe a picture using them.`)
+      )
+  }
+}
+
+export interface BuildPlanOptions {
+  maxSteps?: number
+  masteryRecords?: MasteryRecord[]
+  nodes?: SkillNode[]
 }
 
 /**
  * Build an action plan from classified gaps and graph prerequisites.
  *
- * @param gaps      Classified gaps from the classification stage.
- * @param edges     Skill graph prerequisite edges.
- * @param maxSteps  Maximum steps to include (default 10).
- * @returns An ActionPlan with steps in prerequisite-respecting order.
+ * When masteryRecords + nodes are provided, also identifies untested
+ * prerequisites — foundation gaps that might explain the visible gaps.
  */
 export function buildActionPlan(
   gaps: ClassifiedGap[],
   edges: SkillEdge[],
-  maxSteps: number = DEFAULT_MAX_STEPS,
+  optionsOrMaxSteps: number | BuildPlanOptions = {},
 ): ActionPlan {
+  const opts: BuildPlanOptions = typeof optionsOrMaxSteps === 'number'
+    ? { maxSteps: optionsOrMaxSteps }
+    : optionsOrMaxSteps
+  const maxSteps = opts.maxSteps ?? DEFAULT_MAX_STEPS
   if (gaps.length === 0) {
     return { steps: [], totalEstimatedMinutes: 0, gapCount: 0 }
   }
@@ -69,16 +115,20 @@ export function buildActionPlan(
   // Collect the set of gap node IDs for prerequisite filtering.
   const gapNodeIds = new Set(gaps.map((g) => g.nodeId))
 
-  // Build a prerequisite map: for each gap node, which other gap
-  // nodes are its prerequisites? Only edges where both endpoints
-  // are in the gap set matter — external prerequisites are assumed met.
+  // Build a prerequisite map. Include edges where BOTH endpoints are
+  // in the gap set, plus edges where the prerequisite (fromNode) is
+  // NOT in the gap set but connects to a gap node — these are
+  // potentially untested foundations that should be flagged.
   const prereqsOf = new Map<string, string[]>()
   for (const gap of gaps) {
     prereqsOf.set(gap.nodeId, [])
   }
   for (const edge of edges) {
-    if (gapNodeIds.has(edge.fromNodeId) && gapNodeIds.has(edge.toNodeId)) {
-      prereqsOf.get(edge.toNodeId)!.push(edge.fromNodeId)
+    if (gapNodeIds.has(edge.toNodeId)) {
+      // Both in gap set: ordering constraint.
+      if (gapNodeIds.has(edge.fromNodeId)) {
+        prereqsOf.get(edge.toNodeId)!.push(edge.fromNodeId)
+      }
     }
   }
 
@@ -95,8 +145,8 @@ export function buildActionPlan(
     nodeId: gap.nodeId,
     nodeTitle: gap.nodeTitle,
     rootCause: gap.rootCause,
-    activity: ACTIVITY_TEMPLATES[gap.rootCause](gap.nodeTitle),
-    estimatedMinutes: TIME_ESTIMATES[gap.rootCause],
+    activity: generateActivity(gap),
+    estimatedMinutes: estimateTime(gap.rootCause, gap.accuracy),
     prerequisiteNodeIds: prereqsOf.get(gap.nodeId) ?? [],
   }))
 
@@ -105,10 +155,30 @@ export function buildActionPlan(
     0,
   )
 
+  // Identify untested prerequisites — foundation nodes that weren't
+  // tested but connect to gap nodes. These might be the real root cause.
+  const untestedPrerequisites: string[] = []
+  if (opts.masteryRecords && opts.nodes) {
+    const testedNodeIds = new Set(opts.masteryRecords.map(m => m.nodeId))
+    const nodeById = new Map(opts.nodes.map(n => [n.id, n]))
+
+    for (const edge of edges) {
+      if (
+        gapNodeIds.has(edge.toNodeId) &&
+        !gapNodeIds.has(edge.fromNodeId) &&
+        !testedNodeIds.has(edge.fromNodeId) &&
+        nodeById.has(edge.fromNodeId)
+      ) {
+        untestedPrerequisites.push(edge.fromNodeId)
+      }
+    }
+  }
+
   return {
     steps,
     totalEstimatedMinutes,
     gapCount: gaps.length,
+    untestedPrerequisites: [...new Set(untestedPrerequisites)],
   }
 }
 

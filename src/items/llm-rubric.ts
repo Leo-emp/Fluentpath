@@ -78,19 +78,23 @@ Respond with JSON only. No prose.
 
 // ─── Response parser ─────────────────────────────────────────────────────
 
-// The set of accepted verdict strings. Anything else is treated as 'pass'
-// (fail-open: the deterministic gates already cleared this item).
+// The set of accepted verdict strings.
 const VERDICTS = new Set<LlmVerdict>(['pass', 'warn', 'reject'])
 
-// Normalize a verdict value. Unknown values default to 'pass'.
+// Normalize a verdict value. Unknown values default to 'reject' —
+// fail-closed prevents unrecognised LLM output from silently passing.
 function normalizeVerdict(v: unknown): LlmVerdict {
   if (typeof v === 'string' && VERDICTS.has(v as LlmVerdict)) return v as LlmVerdict
-  return 'pass'
+  return 'reject'
 }
 
-// Normalize a dimension result. Missing or malformed objects get pass + empty reason.
+// Normalize a dimension result. Missing or malformed dimensions are
+// rejected — a missing dimension likely means the LLM response is
+// broken, not that the item is fine.
 function normalizeDimension(d: unknown): LlmDimensionResult {
-  if (typeof d !== 'object' || d === null) return { verdict: 'pass', reason: '' }
+  if (typeof d !== 'object' || d === null) {
+    return { verdict: 'reject', reason: 'LLM did not return this dimension — failing closed.' }
+  }
   const obj = d as Record<string, unknown>
   return {
     verdict: normalizeVerdict(obj.verdict),

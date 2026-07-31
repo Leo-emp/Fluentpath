@@ -74,6 +74,9 @@ export interface PlacementState {
 export interface PlacementResult {
   // The highest level the learner passed.
   estimatedLevel: CefrLevel
+  // How confident we are in this placement. Based on margin above/below
+  // threshold and number of levels tested.
+  confidence: 'low' | 'moderate' | 'high'
   // Per-level pass rates (for confidence and mastery population).
   levelResults: Record<string, LevelResult>
   // Total items used.

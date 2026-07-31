@@ -92,21 +92,21 @@ describe('parseRubricResponse', () => {
     expect(parseRubricResponse('null')).toBeNull()
   })
 
-  it('treats missing dimensions as pass', () => {
-    // Only naturalness present, rest missing.
+  it('rejects missing dimensions (fail-closed)', () => {
     const partial = JSON.stringify({
       naturalness: { verdict: 'reject', reason: 'Too formal' },
     })
     const result = parseRubricResponse(partial)
     expect(result).not.toBeNull()
     expect(result!.naturalness.verdict).toBe('reject')
-    // Missing dimensions default to pass.
-    expect(result!.authenticity.verdict).toBe('pass')
-    expect(result!.teacherTest.verdict).toBe('pass')
-    expect(result!.explanatoryTransfer.verdict).toBe('pass')
+    // Missing dimensions are rejected — a broken response should
+    // not silently pass items through.
+    expect(result!.authenticity.verdict).toBe('reject')
+    expect(result!.teacherTest.verdict).toBe('reject')
+    expect(result!.explanatoryTransfer.verdict).toBe('reject')
   })
 
-  it('treats unknown verdict values as pass', () => {
+  it('rejects unknown verdict values (fail-closed)', () => {
     const weird = JSON.stringify({
       naturalness: { verdict: 'GOOD', reason: 'Nice' },
       authenticity: { verdict: 'maybe', reason: 'Hmm' },
@@ -115,10 +115,10 @@ describe('parseRubricResponse', () => {
     })
     const result = parseRubricResponse(weird)
     expect(result).not.toBeNull()
-    // All unknowns default to pass.
-    expect(result!.naturalness.verdict).toBe('pass')
-    expect(result!.authenticity.verdict).toBe('pass')
-    expect(result!.teacherTest.verdict).toBe('pass')
+    // Unknown values are rejected — only 'pass', 'warn', 'reject' accepted.
+    expect(result!.naturalness.verdict).toBe('reject')
+    expect(result!.authenticity.verdict).toBe('reject')
+    expect(result!.teacherTest.verdict).toBe('reject')
     expect(result!.explanatoryTransfer.verdict).toBe('pass')
   })
 

@@ -85,19 +85,20 @@ describe('reviewItemLlm', () => {
     expect(result.issues[0]!.severity).toBe('warn')
   })
 
-  it('fail-open on unparseable output', async () => {
+  it('fail-closed on unparseable output', async () => {
     const result = await reviewItemLlm(ITEM, rawProvider('I cannot evaluate this item.'), 'Test')
-    // Unparseable LLM output = pass with no issues. The deterministic
-    // gates already cleared this item.
-    expect(result.passed).toBe(true)
-    expect(result.issues).toHaveLength(0)
+    // Unparseable LLM output = reject. Items that cannot be quality-
+    // reviewed should not reach learners.
+    expect(result.passed).toBe(false)
+    expect(result.issues).toHaveLength(1)
+    expect(result.issues[0]!.code).toBe('TEACHER_REJECT')
     expect(result.raw).toBeNull()
   })
 
-  it('fail-open on markdown-wrapped garbage', async () => {
+  it('fail-closed on markdown-wrapped garbage', async () => {
     const result = await reviewItemLlm(ITEM, rawProvider('```json\nnot json\n```'), 'Test')
-    expect(result.passed).toBe(true)
-    expect(result.issues).toHaveLength(0)
+    expect(result.passed).toBe(false)
+    expect(result.issues).toHaveLength(1)
   })
 
   it('passes the prompt to the provider', async () => {

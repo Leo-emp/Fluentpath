@@ -1,6 +1,8 @@
 import type { Db } from '@/db/client'
 import type { ProfilerInventory } from '@/profiler/profile'
+import type { GenerationProvider } from '@/generation/provider'
 import { reviewItem } from '@/items/review'
+import { reviewItemLlm } from '@/items/llm-review'
 import type { ItemReview, McqItem } from '@/items/types'
 import { getItem, getItemVersion, setCurrentVersion } from './repository'
 
@@ -60,8 +62,20 @@ export interface PublishResult {
   review: ItemReview
 }
 
+export interface PublishOptions {
+  llmProvider?: GenerationProvider
+  nodeTitle?: string
+}
+
 /**
  * Publish a version after checking it, making it the live one.
+ *
+ * Two-pass quality check:
+ *   1. Deterministic gates (structure, answer key, level, duplicates)
+ *   2. LLM rubric (naturalness, authenticity, teacher test, explanation)
+ *
+ * The LLM pass is required when a provider is given. Omitting it is only
+ * acceptable in tests and seed data — production publishes must supply one.
  *
  * @throws PublishRejectedError when any gate rejects the item
  */
@@ -70,6 +84,7 @@ export async function publishItemVersion(
   versionId: string,
   inventory: ProfilerInventory,
   now: number,
+  options: PublishOptions = {},
 ): Promise<PublishResult> {
   const version = await getItemVersion(db, versionId)
   if (!version) throw new Error(`Unknown item version "${versionId}".`)
@@ -99,6 +114,21 @@ export async function publishItemVersion(
 
   const review = reviewItem(mcq, { inventory })
   if (!review.passed) throw new PublishRejectedError(versionId, review)
+
+  // Pass 2: LLM quality rubric — catches pedagogically weak items
+  // that are structurally sound.
+  if (options.llmProvider && options.nodeTitle) {
+    const llmReview = await reviewItemLlm(mcq, options.llmProvider, options.nodeTitle)
+    if (!llmReview.passed) {
+      const combined: ItemReview = {
+        ...review,
+        passed: false,
+        issues: [...review.issues, ...llmReview.issues],
+      }
+      throw new PublishRejectedError(versionId, combined)
+    }
+    review.issues.push(...llmReview.issues)
+  }
 
   await setCurrentVersion(db, version.itemId, versionId, now)
 

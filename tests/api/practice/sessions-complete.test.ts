@@ -79,6 +79,19 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
     expect(data.error).toContain('completed')
   })
 
+  it('returns 403 when learnerId does not match session owner', async () => {
+    const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
+
+    const res = await POST(
+      postRequest(sessionId, {
+        learnerId: 'evil.attacker',
+        outcomes: [{ nodeId: 'gram.a1.be', outcome: 1, difficulty: 0.5 }],
+      }),
+      makeParams(sessionId),
+    )
+    expect(res.status).toBe(403)
+  })
+
   it('returns 400 when learnerId is missing', async () => {
     const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
     const res = await POST(

@@ -169,6 +169,15 @@ export interface PronunciationFeatures {
     startMs: number
     endMs: number
   }>
+  // Per-phoneme accuracy when phoneme data is available (null otherwise).
+  phonemeAccuracy: number | null
+  // Specific mispronounced phonemes with the expected sound.
+  mispronounced: Array<{
+    word: string
+    phoneme: string
+    expected: string
+    accuracy: number
+  }>
 }
 
 /**

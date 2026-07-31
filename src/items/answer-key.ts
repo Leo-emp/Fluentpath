@@ -14,15 +14,62 @@ function substitute(stem: string, optionText: string): string | null {
 
 // Verify the answer key by substituting options into the stem.
 //
-// Three checks:
+// For fill-in-blank items, three checks:
 // 1. The correct option must produce grammatically valid English.
 // 2. At least one distractor must be detectably wrong in context.
 // 3. Each distractor's misconception must match what the option actually does.
+//
+// For non-blank MCQs, structural checks:
+// 1. correctIndex must point to a valid option.
+// 2. The correct option must not be empty.
 export function checkAnswerKey(item: McqItem): ItemIssue[] {
   const issues: ItemIssue[] = []
 
-  // Only applies to fill-in-blank items.
-  if (!item.stem.includes(BLANK)) return issues
+  // Structural check for ALL MCQ types: correctIndex must be valid.
+  if (item.correctIndex < 0 || item.correctIndex >= item.options.length) {
+    issues.push({
+      code: 'WRONG_KEY',
+      severity: 'reject',
+      message: `correctIndex is ${item.correctIndex} but there are only ${item.options.length} options.`,
+    })
+    return issues
+  }
+
+  const correctOption = item.options[item.correctIndex]
+  if (correctOption && correctOption.text.trim() === '') {
+    issues.push({
+      code: 'WRONG_KEY',
+      severity: 'reject',
+      message: 'The correct option has empty text.',
+    })
+  }
+
+  // Non-blank MCQs: check misconception consistency (tense cross-check
+  // still applies even without a fill-in stem).
+  if (!item.stem.includes(BLANK)) {
+    item.options.forEach((option, index) => {
+      if (index === item.correctIndex) return
+      if (!option.misconception) return
+
+      const claimedTense = extractTenseFromMisconception(option.misconception)
+      if (claimedTense === null) return
+      const actualTense = detectTense(option.text)
+      if (actualTense === null) return
+
+      if (claimedTense !== actualTense) {
+        issues.push({
+          code: 'MISCONCEPTION_MISMATCH',
+          severity: 'reject',
+          message:
+            `Option ${index} ("${option.text}") is detected as ${actualTense}, ` +
+            `but its misconception says "${option.misconception}" which names ` +
+            `${claimedTense}. Either the option or the misconception is wrong.`,
+          optionIndex: index,
+        })
+      }
+    })
+    return issues
+  }
 
   // 1. Check the correct option produces valid English.
   const correctText = item.options[item.correctIndex]?.text

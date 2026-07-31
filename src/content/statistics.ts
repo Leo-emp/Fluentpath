@@ -106,6 +106,62 @@ export async function recordReport(
     })
 }
 
+// ─── Quality thresholds ─────────────────────────────────────────────────
+
+// Minimum attempts before thresholds apply (avoid acting on sparse data).
+const MIN_ATTEMPTS_FOR_THRESHOLD = 20
+
+// Items easier than this are trivial — learners aren't learning.
+const P_VALUE_CEILING = 0.95
+// Items harder than this are broken — almost nobody gets them right.
+const P_VALUE_FLOOR = 0.10
+// More than 5% of attempts result in a report = something is wrong.
+const REPORT_RATE_CEILING = 0.05
+// More than 20% abandonment = item is confusing or off-putting.
+const ABANDONMENT_RATE_CEILING = 0.20
+
+export type ItemHealthFlag =
+  | 'too_easy'
+  | 'too_hard'
+  | 'high_report_rate'
+  | 'high_abandonment'
+
+export interface ItemHealth {
+  versionId: string
+  flags: ItemHealthFlag[]
+  shouldRetire: boolean
+}
+
+// Check an item's statistics against quality thresholds.
+export function checkItemHealth(stats: ItemStatistics): ItemHealth {
+  const flags: ItemHealthFlag[] = []
+
+  if (stats.attempts >= MIN_ATTEMPTS_FOR_THRESHOLD) {
+    if (stats.pValue !== null && stats.pValue >= P_VALUE_CEILING) {
+      flags.push('too_easy')
+    }
+    if (stats.pValue !== null && stats.pValue <= P_VALUE_FLOOR) {
+      flags.push('too_hard')
+    }
+  }
+
+  const totalInteractions = stats.attempts + stats.abandonments
+  if (totalInteractions >= MIN_ATTEMPTS_FOR_THRESHOLD) {
+    if (stats.reports / totalInteractions >= REPORT_RATE_CEILING) {
+      flags.push('high_report_rate')
+    }
+    if (stats.abandonments / totalInteractions >= ABANDONMENT_RATE_CEILING) {
+      flags.push('high_abandonment')
+    }
+  }
+
+  return {
+    versionId: stats.itemVersionId,
+    flags,
+    shouldRetire: flags.includes('too_hard') || flags.includes('high_report_rate'),
+  }
+}
+
 // ─── Query ───────────────────────────────────────────────────────────────
 
 // Fetch current statistics for an item version. Returns null when no

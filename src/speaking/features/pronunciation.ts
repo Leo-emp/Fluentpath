@@ -18,17 +18,25 @@ import type { SttResult, PronunciationFeatures } from '../types'
 // correct; below it, the STT service was genuinely uncertain.
 const LOW_CONFIDENCE_THRESHOLD = 0.6
 
+// Phoneme accuracy below this is flagged as mispronounced.
+const LOW_PHONEME_ACCURACY = 0.5
+
 /**
- * Extract pronunciation features from STT word-level confidence scores.
+ * Extract pronunciation features from STT output.
  *
- * Pure computation — no LLM, no randomness. The flagged words give the
- * learner specific pronunciation targets.
+ * When phoneme-level data is available (Azure Speech, Speechace),
+ * provides per-phoneme accuracy. Otherwise falls back to word-level
+ * confidence as a proxy.
+ *
+ * Pure computation — no LLM, no randomness.
  */
 export function extractPronunciation(stt: SttResult): PronunciationFeatures {
   if (stt.words.length === 0) {
     return {
       meanWordConfidence: 0,
       lowConfidenceWords: [],
+      phonemeAccuracy: null,
+      mispronounced: [],
     }
   }
 
@@ -50,8 +58,32 @@ export function extractPronunciation(stt: SttResult): PronunciationFeatures {
       endMs: w.endMs,
     }))
 
+  // Phoneme-level analysis when available.
+  let phonemeAccuracy: number | null = null
+  const mispronounced: Array<{ word: string; phoneme: string; expected: string; accuracy: number }> = []
+
+  if (stt.phonemes && stt.phonemes.length > 0) {
+    const totalPhonemeAccuracy = stt.phonemes.reduce(
+      (sum, p) => sum + p.accuracy, 0,
+    )
+    phonemeAccuracy = Math.round((totalPhonemeAccuracy / stt.phonemes.length) * 100) / 100
+
+    for (const p of stt.phonemes) {
+      if (p.accuracy < LOW_PHONEME_ACCURACY) {
+        mispronounced.push({
+          word: p.word,
+          phoneme: p.phoneme,
+          expected: p.expected,
+          accuracy: p.accuracy,
+        })
+      }
+    }
+  }
+
   return {
     meanWordConfidence,
     lowConfidenceWords,
+    phonemeAccuracy,
+    mispronounced,
   }
 }

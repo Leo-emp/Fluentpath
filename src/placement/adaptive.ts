@@ -187,8 +187,8 @@ export function isComplete(state: PlacementState): boolean {
  * was passed, returns 'preA1'.
  */
 export function getResult(state: PlacementState): PlacementResult {
-  // Find the highest passed level by iterating A1→C2 in order.
   let estimatedLevel: CefrLevel = 'preA1'
+  let passMargin = 0
 
   for (const level of TESTABLE_LEVELS) {
     const result = state.levelResults[level]
@@ -196,11 +196,24 @@ export function getResult(state: PlacementState): PlacementResult {
     const passRate = result.correct / result.total
     if (passRate >= state.config.correctThreshold) {
       estimatedLevel = level
+      passMargin = passRate - state.config.correctThreshold
     }
+  }
+
+  // Confidence: based on how many levels were tested and pass margin.
+  const levelsCompleted = state.completedLevels.length
+  let confidence: 'low' | 'moderate' | 'high'
+  if (levelsCompleted <= 1 || (!state.finished && state.itemsAnswered < 4)) {
+    confidence = 'low'
+  } else if (state.finished && passMargin >= 0.2) {
+    confidence = 'high'
+  } else {
+    confidence = 'moderate'
   }
 
   return {
     estimatedLevel,
+    confidence,
     levelResults: { ...state.levelResults },
     itemsUsed: state.itemsAnswered,
     answeredItemIds: [...state.answeredItemIds],

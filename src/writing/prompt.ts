@@ -15,6 +15,7 @@
 
 import type { WritingTask, WritingResponse, WritingRubric } from './types'
 import type { ProfilerInventory } from '@/profiler/profile'
+import type { WritingFeatures } from './features'
 
 /**
  * Build the full prompt sent to the LLM for scoring.
@@ -26,14 +27,15 @@ import type { ProfilerInventory } from '@/profiler/profile'
  *   - A structured output format specification
  *   - Quality rules that prevent generic or evidence-free feedback
  *
- * The inventory parameter is reserved for future use — it will be used
- * to constrain feedback vocabulary to the learner's level.
+ * When features are provided, they are injected as pre-computed facts
+ * the LLM cannot contradict — the same pattern as speaking assessment.
  */
 export function buildScoringPrompt(
   response: WritingResponse,
   task: WritingTask,
   rubric: WritingRubric,
   _inventory: ProfilerInventory,
+  features?: WritingFeatures,
 ): string {
   const lines: string[] = []
 
@@ -76,6 +78,28 @@ export function buildScoringPrompt(
     )
     for (const desc of criterion.descriptors) {
       lines.push(`  ${desc.score}: ${desc.description}`)
+    }
+    lines.push('')
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pre-computed features — objective measurements the LLM must not override
+  // ---------------------------------------------------------------------------
+  if (features) {
+    lines.push('## PRE-COMPUTED FEATURES (do NOT contradict these)')
+    lines.push(`Word count: ${features.wordCount}`)
+    lines.push(`Sentence count: ${features.sentenceCount}`)
+    lines.push(`Mean sentence length: ${features.meanSentenceLength} words`)
+    lines.push(`Paragraphs: ${features.paragraphCount}`)
+    lines.push(`Type-token ratio: ${features.typeTokenRatio}`)
+    if (features.missingArticleCount > 0) {
+      lines.push(`Detected missing articles: ${features.missingArticleCount} (verify and include in groupedIssues)`)
+    }
+    if (features.subjectVerbErrors > 0) {
+      lines.push(`Detected subject-verb agreement errors: ${features.subjectVerbErrors} (verify and include in groupedIssues)`)
+    }
+    if (Object.keys(features.vocabularyLevelProfile).length > 0) {
+      lines.push(`Vocabulary level profile: ${JSON.stringify(features.vocabularyLevelProfile)}`)
     }
     lines.push('')
   }

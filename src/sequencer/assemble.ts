@@ -36,7 +36,7 @@ export interface SessionPlan {
   items: SessionItem[]
   // Unique node IDs covered in this session.
   nodeIds: string[]
-  // Estimated session duration (items × 30 seconds).
+  // Estimated session duration (items × 30 seconds each).
   estimatedMinutes: number
 }
 
@@ -76,7 +76,7 @@ export async function assembleSession(
   options: AssembleOptions,
 ): Promise<SessionPlan> {
   const { now } = options
-  const maxItems = options.maxItems ?? 10
+  const maxItems = options.maxItems ?? 20
   const maxNodes = options.maxNodes ?? 6
 
   // Step 1: load state — mastery, skill graph.
