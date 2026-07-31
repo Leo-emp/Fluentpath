@@ -60,18 +60,23 @@ Build the complete frontend for FluentPath — a high-end, sophisticated English
 
 ### AppLayout (`src/app/(app)/layout.tsx`)
 
-- Route group for `/dashboard`, `/placement/result`, `/mock-test`, `/mock-test/[id]/result`, `/diagnosis/[id]`
-- Top nav bar: "FluentPath" wordmark (Playfair Display, black) left, user menu (name + sign-out) right
-- Content area: centered, max-width varies by page (720px default)
-- Protected: checks session via `authClient.useSession()`, redirects to `/sign-in` if unauthenticated
+- Route group for ALL protected routes: dashboard, placement, practice, mock-test, diagnosis
+- Does ONE thing: wraps children in `AuthGuard`. No visual chrome here.
+- This avoids route group conflicts — all authenticated routes live under `(app)` regardless of whether they show a nav bar or not
 
-### SessionLayout (`src/app/(session)/layout.tsx`)
+### NavBar (component, not a layout)
 
-- Route group for `/placement`, `/practice`, `/mock-test/[id]`
-- Full-screen, distraction-free — no nav bar
+- `src/components/nav-bar.tsx` — imported by pages that need it (dashboard, result pages, exam selector, diagnosis)
+- "FluentPath" wordmark (Playfair Display, black) left, user menu (name + sign-out) right
+- Pages that DON'T import NavBar get the full-screen session experience (placement, practice, mock test active session)
+
+### SessionShell (component, not a layout)
+
+- `src/components/session-shell.tsx` — imported by session pages (placement, practice, mock-test active)
+- Full-screen, distraction-free wrapper
 - Thin progress bar at very top of viewport
 - "Quit" link in top-right corner (subtle, grey)
-- Protected: same auth check as AppLayout
+- Accepts `onQuit` callback prop
 
 ## Page Designs
 
@@ -135,9 +140,10 @@ Full-width card with Playfair heading "Find Your Level", subtitle "Take a 5-minu
 - Same action cards
 
 API calls on mount:
+- `GET /api/me` — learner profile including `currentLevel` (null = no placement done yet, determines which state to show)
 - `GET /api/placement/active` — check for in-progress placement (if active, show "Resume Placement" instead)
-- `GET /api/practice/sessions` — recent sessions
-- `GET /api/diagnosis` — past diagnoses
+- `GET /api/practice/sessions` — recent sessions (state 3 only)
+- `GET /api/diagnosis` — past diagnoses (state 3 only)
 
 ### Placement Flow (`/placement`)
 
@@ -253,7 +259,10 @@ Data: `GET /api/diagnosis/[id]`.
 | `ProgressBar` | `src/components/progress-bar.tsx` | Thin black bar, props: `current`, `total` |
 | `LevelBadge` | `src/components/level-badge.tsx` | CEFR level in a bold black circle. Props: `level`, `size` |
 | `Timer` | `src/components/timer.tsx` | Countdown display. Props: `durationMs`, `onExpire`, `warnAtMs` |
-| `AuthGuard` | `src/components/auth-guard.tsx` | Client component wrapping protected routes. Uses `authClient.useSession()`, redirects to `/sign-in` if no session |
+| `AuthGuard` | `src/components/auth-guard.tsx` | Client component wrapping protected routes. Uses `authClient.useSession()`, redirects to `/sign-in` if no session. Shows full-page skeleton (pulsing grey bars) while loading. |
+| `NavBar` | `src/components/nav-bar.tsx` | Top bar: wordmark left, user menu right. Imported by pages that need it. |
+| `SessionShell` | `src/components/session-shell.tsx` | Full-screen distraction-free wrapper with progress bar + quit link. |
+| `PageSkeleton` | `src/components/page-skeleton.tsx` | Shimmer loading skeleton — used by AuthGuard and as fallback during data fetches. |
 
 ## Auth Flow
 
@@ -267,12 +276,39 @@ Data: `GET /api/diagnosis/[id]`.
 
 All routes under `(app)` and `(session)` route groups are protected via `AuthGuard` in their respective layouts. Public routes (`/`, `/sign-up`, `/sign-in`) have no auth check.
 
+## Required Backend Additions
+
+Three thin endpoints needed by the frontend that don't exist yet:
+
+| Endpoint | Purpose | Auth |
+|----------|---------|------|
+| `GET /api/me` | Returns the authenticated learner's profile: `{ learnerId, email, currentLevel, createdAt }`. Dashboard uses this to determine state (new user vs has level). | Yes |
+| `GET /api/placement/latest` | Returns the most recent completed placement result for the learner, or null. Used by `/placement/result` on page refresh (fallback when React state is lost). | Yes |
+| `GET /api/test-results/[id]` | Returns a test result by ID with ownership check. Used by `/mock-test/[id]/result` to display band scores. | Yes |
+
+These are simple read endpoints following the same pattern as existing routes (`getAuthenticatedLearner` + `getDb` + repository query + `jsonOk`).
+
+## Data Flow on Page Transitions
+
+**Placement flow:** The last `POST /api/placement/answer` response (when `finished: true`) includes the full result. Store it in React state and navigate to `/placement/result`. If the user refreshes the result page, call `GET /api/placement/latest` as fallback. If that also returns null, redirect to `/dashboard`.
+
+**Mock test flow:** `POST /api/mock-test/sessions/[id]/complete` returns `{ testResultId, bandScores }`. Navigate to `/mock-test/[id]/result?rid=[testResultId]`. The result page reads `rid` from the URL and calls `GET /api/test-results/[rid]`. This survives refresh.
+
+**Diagnosis flow:** `POST /api/diagnosis { testResultId }` returns `{ diagnosisId }`. Navigate to `/diagnosis/[diagnosisId]`. The diagnosis page calls `GET /api/diagnosis/[id]` — this endpoint already exists.
+
+## Loading States
+
+Every page that fetches data on mount shows a `PageSkeleton` (pulsing grey bars matching the page layout) until data arrives. No blank screens, no spinners — skeletons only, matching the monochrome aesthetic.
+
+Form submissions: button text changes to "..." and button is disabled. No spinner icons.
+
 ## Error Handling
 
 - API errors: toast notification (shadcn Sonner/Toast) for transient errors, inline messages for validation errors
 - 401 from any API call: redirect to `/sign-in`
 - 404: show a simple "Not Found" page
-- Network errors: retry button in the UI
+- 429 (rate limited): toast "Please wait a moment" — do NOT retry automatically
+- Network errors: toast with "Connection lost" + retry button in the UI
 
 ## Non-Goals (Excluded from this spec)
 
