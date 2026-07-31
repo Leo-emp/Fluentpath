@@ -1,5 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+
+// Mock auth before importing route handlers.
+vi.mock('@/app/api/_lib/auth', () => ({
+  getAuthenticatedLearner: vi.fn(),
+}))
+
+import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
 import { makeTestDb } from '../../helpers/test-db'
 import { _setTestDb } from '@/app/api/_lib/db'
 import { GET, PATCH } from '@/app/api/practice/sessions/[id]/route'
@@ -34,11 +41,16 @@ function makeParams(id: string) {
 beforeEach(async () => {
   db = await makeTestDb()
   _setTestDb(db)
+  vi.mocked(getAuthenticatedLearner).mockResolvedValue({
+    learnerId: 'learner.1',
+    email: 'test@test.com',
+  })
   await db.insert(learners).values({ id: 'learner.1', email: 'test@test.com', createdAt: NOW, updatedAt: NOW })
 })
 
 afterEach(() => {
   _setTestDb(null)
+  vi.restoreAllMocks()
 })
 
 describe('GET /api/practice/sessions/[id]', () => {
@@ -79,5 +91,13 @@ describe('PATCH /api/practice/sessions/[id]', () => {
     const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
     const res = await PATCH(patchRequest(sessionId, {}), makeParams(sessionId))
     expect(res.status).toBe(400)
+  })
+
+  it('returns 401 when not authenticated', async () => {
+    const { AuthError } = await import('@/app/api/_lib/validate')
+    vi.mocked(getAuthenticatedLearner).mockRejectedValue(new AuthError())
+
+    const res = await PATCH(patchRequest('any', { progress: 1 }), makeParams('any'))
+    expect(res.status).toBe(401)
   })
 })

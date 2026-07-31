@@ -7,6 +7,15 @@ export class ValidationError extends Error {
   }
 }
 
+// Thrown when a request has no valid session or the session's email
+// does not match any learner. Caught as 401 in route handlers.
+export class AuthError extends Error {
+  constructor(message = 'Authentication required') {
+    super(message)
+    this.name = 'AuthError'
+  }
+}
+
 // Require a string field. Throws ValidationError if missing or not a string.
 export function requireString(body: Record<string, unknown>, field: string): string {
   const value = body[field]

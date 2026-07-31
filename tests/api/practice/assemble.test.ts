@@ -1,5 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+
+// Mock auth before importing route handlers.
+vi.mock('@/app/api/_lib/auth', () => ({
+  getAuthenticatedLearner: vi.fn(),
+}))
+
+import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
 import { makeTestDb } from '../../helpers/test-db'
 import { _setTestDb } from '@/app/api/_lib/db'
 import { POST } from '@/app/api/practice/assemble/route'
@@ -44,6 +51,11 @@ function postRequest(body: Record<string, unknown>): NextRequest {
 beforeEach(async () => {
   db = await makeTestDb()
   _setTestDb(db)
+  // Mock auth to return the test learner.
+  vi.mocked(getAuthenticatedLearner).mockResolvedValue({
+    learnerId: 'learner.1',
+    email: 'test@test.com',
+  })
   // Insert a learner for FK constraints.
   await db.insert(learners).values({ id: 'learner.1', email: 'test@test.com', createdAt: NOW, updatedAt: NOW })
   await upsertNodes(db, NODES, NOW)
@@ -52,6 +64,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   _setTestDb(null)
+  vi.restoreAllMocks()
 })
 
 describe('POST /api/practice/assemble', () => {
@@ -63,7 +76,7 @@ describe('POST /api/practice/assemble', () => {
     }, NOW)
     await publishItemVersion(db, versionId, inventory, NOW)
 
-    const res = await POST(postRequest({ learnerId: 'learner.1' }))
+    const res = await POST(postRequest({}))
     const data = await res.json()
 
     expect(res.status).toBe(200)
@@ -73,18 +86,18 @@ describe('POST /api/practice/assemble', () => {
   })
 
   it('returns empty plan when no items are published', async () => {
-    const res = await POST(postRequest({ learnerId: 'learner.1' }))
+    const res = await POST(postRequest({}))
     const data = await res.json()
 
     expect(res.status).toBe(200)
     expect(data.items).toHaveLength(0)
   })
 
-  it('returns 400 when learnerId is missing', async () => {
-    const res = await POST(postRequest({}))
-    const data = await res.json()
+  it('returns 401 when not authenticated', async () => {
+    const { AuthError } = await import('@/app/api/_lib/validate')
+    vi.mocked(getAuthenticatedLearner).mockRejectedValue(new AuthError())
 
-    expect(res.status).toBe(400)
-    expect(data.error).toContain('learnerId')
+    const res = await POST(postRequest({}))
+    expect(res.status).toBe(401)
   })
 })

@@ -62,6 +62,17 @@ export async function findDiagnosesByLearner(db: Db, learnerId: string) {
  * Returns undefined if no diagnosis exists for that result yet.
  * Used to check whether the paywall has been passed for a given result.
  */
+// Find a diagnosis by its primary key.
+export async function findDiagnosisById(db: Db, id: string) {
+  const rows = await db
+    .select()
+    .from(diagnoses)
+    .where(eq(diagnoses.id, id))
+    .limit(1)
+
+  return rows[0]
+}
+
 export async function findDiagnosisByTestResult(db: Db, testResultId: string) {
   const rows = await db
     .select()

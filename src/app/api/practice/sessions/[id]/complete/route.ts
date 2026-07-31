@@ -1,7 +1,8 @@
 import { type NextRequest } from 'next/server'
 import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
-import { ValidationError, requireString, requireArray } from '@/app/api/_lib/validate'
+import { ValidationError, AuthError, requireArray } from '@/app/api/_lib/validate'
+import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
 import { getPracticeSession, completePracticeSession } from '@/sequencer/session-store'
 import { recordOutcomes, type AssessedOutcome } from '@/mastery/service'
 
@@ -13,6 +14,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { learnerId } = await getAuthenticatedLearner(request)
+
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
     const db = getDb()
@@ -24,9 +27,7 @@ export async function POST(
       return jsonError(400, `Session is already "${session.status}".`)
     }
 
-    const learnerId = requireString(body, 'learnerId')
-
-    // Ownership check — the caller must own this session.
+    // Ownership check — the authenticated user must own this session.
     if (session.learnerId !== learnerId) {
       return jsonError(403, 'You do not own this session.')
     }
@@ -42,6 +43,7 @@ export async function POST(
 
     return jsonOk({ mastery })
   } catch (err) {
+    if (err instanceof AuthError) return jsonError(401, err.message)
     if (err instanceof ValidationError) return jsonError(400, err.message)
     console.error('[POST /api/practice/sessions/[id]/complete]', err)
     return jsonError(500, 'Internal server error')

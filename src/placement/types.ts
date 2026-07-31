@@ -18,7 +18,7 @@
  * the placement can be persisted and resumed at any point.
  */
 
-import type { CefrLevel } from '@/skill-graph/types'
+import type { CefrLevel, SkillArea } from '@/skill-graph/types'
 
 /**
  * Configuration for the placement test.
@@ -55,6 +55,9 @@ export interface PlacementState {
   itemsAnswered: number
   // Results per level tested.
   levelResults: Record<string, LevelResult>
+  // Results per skill area per level — skillResults[skill][level].
+  // Used to compute per-skill placement without changing the main algorithm.
+  skillResults: Record<string, Record<string, LevelResult>>
   // IDs of items already answered (prevents re-selection).
   // Array instead of Set for JSON serialization.
   answeredItemIds: string[]
@@ -79,6 +82,9 @@ export interface PlacementResult {
   confidence: 'low' | 'moderate' | 'high'
   // Per-level pass rates (for confidence and mastery population).
   levelResults: Record<string, LevelResult>
+  // Per-skill estimated levels. A learner might be A2 grammar + B1 vocab.
+  // Only includes skills with enough data. Empty when skill tagging is absent.
+  perSkillLevels: Partial<Record<SkillArea, CefrLevel>>
   // Total items used.
   itemsUsed: number
   // Which items were answered (for deduplication if retested).

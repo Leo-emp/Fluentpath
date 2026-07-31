@@ -37,6 +37,19 @@ export async function createTestSession(db: Db, input: CreateTestSessionInput) {
 }
 
 /**
+ * Find a test session by ID (any status).
+ */
+export async function findTestSessionById(db: Db, sessionId: string) {
+  const rows = await db
+    .select()
+    .from(testSessions)
+    .where(eq(testSessions.id, sessionId))
+    .limit(1)
+
+  return rows[0]
+}
+
+/**
  * Find the active (in_progress) test session for a learner.
  *
  * Returns undefined if the learner has no active session.

@@ -26,6 +26,7 @@
 
 import type { NodeOutcome, WeakNode, ClassifiedGap, RootCause } from './types'
 import type { SectionSkill } from '@/mock-test/types'
+import type { NodeType } from '@/skill-graph/types'
 
 // A response is "slow" if it exceeds this multiple of the median
 // latency across all outcomes. 2× means twice as slow as typical.
@@ -45,16 +46,100 @@ const RECEPTIVE_SKILLS: SectionSkill[] = ['listening', 'reading']
 // Productive skills (producing language).
 const PRODUCTIVE_SKILLS: SectionSkill[] = ['writing', 'speaking']
 
+// ─── L1 interference rules ──────────────────────────────────────────────
+
+interface L1Rule {
+  nodeTypes: NodeType[]
+  misconceptionPattern: RegExp
+  explanation: string
+}
+
+// Keyed by ISO 639-1 language code. Each rule matches a node type and
+// a misconception pattern that is predictable from the L1.
+const L1_RULES: Record<string, L1Rule[]> = {
+  // Thai, Chinese, Japanese, Korean — no article system.
+  th: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /article|determiner|a\/an|the\b/i, explanation: 'Thai has no articles. Learners often drop or misuse a/an/the because no equivalent exists in L1.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /plural|countable|uncountable/i, explanation: 'Thai nouns have no plural inflection. Learners may omit plural -s or confuse countable/uncountable.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /tense|past.*simple|present.*perfect/i, explanation: 'Thai uses context and particles for time reference, not verb inflection. Tense marking is a common L1 transfer error.' },
+  ],
+  zh: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /article|determiner|a\/an|the\b/i, explanation: 'Chinese has no articles. Learners often drop or misuse a/an/the because no equivalent exists in L1.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /plural|countable|uncountable/i, explanation: 'Chinese nouns have no plural inflection. Learners may omit plural -s or confuse countable/uncountable.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /tense|past.*simple|present.*perfect/i, explanation: 'Chinese uses context and time adverbs rather than verb inflection for tense. Tense errors are a predictable L1 transfer.' },
+  ],
+  ja: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /article|determiner|a\/an|the\b/i, explanation: 'Japanese has no articles. Learners often omit or misuse a/an/the.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /plural|countable/i, explanation: 'Japanese nouns are not inflected for number. Plural marking is a predictable difficulty.' },
+    { nodeTypes: ['phono'], misconceptionPattern: /l.*r|r.*l|lateral|rhotic/i, explanation: 'Japanese does not distinguish /l/ and /r/. This is a well-documented L1 phonological transfer.' },
+  ],
+  ko: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /article|determiner|a\/an|the\b/i, explanation: 'Korean has no articles. Learners often omit or misuse a/an/the.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /relative.*clause|word.*order/i, explanation: 'Korean is SOV with relative clauses preceding the noun. English SVO and post-nominal relatives are a common transfer challenge.' },
+  ],
+  // Arabic — different tense system, no copula in present.
+  ar: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /tense|present.*perfect|past.*continuous/i, explanation: 'Arabic has a two-tense system (perfect/imperfect). English multi-tense distinctions (simple vs continuous vs perfect) are a predictable L1 transfer difficulty.' },
+    { nodeTypes: ['grammar'], misconceptionPattern: /copula|verb.*be|is\/are|subject.*verb/i, explanation: 'Arabic drops the copula in present tense ("He tall" = valid). Learners often omit "is/are" in English.' },
+  ],
+  // Spanish — false cognates, ser/estar, subjunctive.
+  es: [
+    { nodeTypes: ['grammar'], misconceptionPattern: /present.*perfect|simple.*past/i, explanation: 'Spanish present perfect usage differs from English. Learners may overuse present perfect where English prefers past simple.' },
+    { nodeTypes: ['lexical'], misconceptionPattern: /false.*friend|false.*cognate|embarr/i, explanation: 'Spanish–English false cognates (e.g. "embarrassed" vs "embarazada") cause predictable lexical confusion.' },
+  ],
+}
+
+/**
+ * Check whether an L1 interference rule matches a weak node and its outcomes.
+ */
+function matchL1Rule(
+  l1: string,
+  weak: WeakNode,
+  outcomes: NodeOutcome[],
+): string | null {
+  const rules = L1_RULES[l1]
+  if (!rules) return null
+
+  for (const rule of rules) {
+    if (!rule.nodeTypes.includes(weak.nodeType)) continue
+
+    // Check node title/ID for the pattern.
+    if (rule.misconceptionPattern.test(weak.nodeTitle) || rule.misconceptionPattern.test(weak.nodeId)) {
+      return rule.explanation
+    }
+
+    // Check misconceptions from incorrect outcomes.
+    for (const outcome of outcomes) {
+      if (outcome.nodeId !== weak.nodeId) continue
+      if (outcome.selectedMisconception && rule.misconceptionPattern.test(outcome.selectedMisconception)) {
+        return rule.explanation
+      }
+    }
+  }
+
+  return null
+}
+
+// ─── Classification ─────────────────────────────────────────────────────
+
+export interface ClassifyOptions {
+  // Learner's first language (ISO 639-1 code). When provided, matched
+  // against L1 interference rules for targeted evidence.
+  l1?: string | null
+}
+
 /**
  * Classify each weak node's root cause.
  *
  * @param weakNodes  Ranked weak nodes from the ranking stage.
  * @param outcomes   All node outcomes from the attribution stage.
+ * @param options    Optional — pass l1 to enable L1 interference detection.
  * @returns ClassifiedGaps in the same order as weakNodes.
  */
 export function classifyGaps(
   weakNodes: WeakNode[],
   outcomes: NodeOutcome[],
+  options?: ClassifyOptions,
 ): ClassifiedGap[] {
   // Group outcomes by nodeId for fast lookup.
   const outcomesByNode = new Map<string, NodeOutcome[]>()
@@ -73,9 +158,13 @@ export function classifyGaps(
       ? allLatencies[Math.floor(allLatencies.length / 2)]!
       : 5000
 
+  const l1 = options?.l1 ?? null
+
   return weakNodes.map((weak) => {
     const nodeOutcomes = outcomesByNode.get(weak.nodeId) ?? []
     const { rootCause, evidence } = classify(weak, nodeOutcomes, medianLatency)
+
+    const l1Interference = l1 ? matchL1Rule(l1, weak, outcomes) : null
 
     return {
       nodeId: weak.nodeId,
@@ -84,11 +173,12 @@ export function classifyGaps(
       level: weak.level,
       skill: weak.skill,
       rootCause,
-      evidence,
+      evidence: l1Interference ? `${evidence} [L1 transfer: ${l1Interference}]` : evidence,
       accuracy: weak.accuracy,
       meanLatencyMs: weak.meanLatencyMs,
       impact: weak.impact,
       rank: weak.rank,
+      l1Interference,
     }
   })
 }

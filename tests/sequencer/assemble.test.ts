@@ -187,6 +187,21 @@ describe('assembleSession', () => {
     expect(plan.items.length).toBeLessThanOrEqual(2)
   })
 
+  it('orders items by difficulty within each node (easiest first)', async () => {
+    // Publish 3 items with explicit difficulty values — out of order.
+    await publishItem('item.be.hard', { ...BE_PAYLOAD, stem: 'The dog ______ big.', difficulty: 0.8 }, 'A1', ['gram.a1.be'])
+    await publishItem('item.be.easy', { ...BE_PAYLOAD, stem: 'I ______ happy.', difficulty: 0.2 }, 'A1', ['gram.a1.be'])
+    await publishItem('item.be.mid', { ...BE_PAYLOAD, stem: 'We ______ good.', difficulty: 0.5 }, 'A1', ['gram.a1.be'])
+
+    const plan = await assembleSession(db, 'learner.1', { now: NOW, maxItems: 3, maxNodes: 1 })
+
+    // All items should be from gram.a1.be, ordered by difficulty ascending.
+    const difficulties = plan.items.map((si) => si.item.difficulty)
+    expect(difficulties[0]).toBe(0.2)
+    expect(difficulties[1]).toBe(0.5)
+    expect(difficulties[2]).toBe(0.8)
+  })
+
   it('interleaves items from different nodes', async () => {
     // Publish 2 items per node.
     await publishItem('item.be.1', BE_PAYLOAD, 'A1', ['gram.a1.be'])

@@ -135,6 +135,13 @@ export async function assembleSession(
   const sessionItems: SessionItem[] = []
   for (const c of nodesWithItems) {
     const nodeItems = itemsByNode.get(c.node.id) ?? []
+    // Sort by difficulty ascending within each node: easiest first.
+    // Items without a difficulty value go to the end (neutral ordering).
+    nodeItems.sort((a, b) => {
+      const da = a.difficulty ?? 1
+      const db = b.difficulty ?? 1
+      return da - db
+    })
     const selected = nodeItems.slice(0, perNode)
     for (const item of selected) {
       sessionItems.push({

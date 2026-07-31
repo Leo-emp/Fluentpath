@@ -48,6 +48,7 @@ function toMcqItem(
     correctIndex: Number(payload.correctIndex ?? -1),
     nodeIds,
     level: itemRow.level as CefrLevel,
+    difficulty: typeof payload.difficulty === 'number' ? payload.difficulty : null,
   }
 }
 

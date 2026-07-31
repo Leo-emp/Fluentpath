@@ -16,6 +16,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@libsql/client": "^0.17.4",
+    "better-auth": "^1.6.25",
     "compromise": "^14.16.0",
     "drizzle-orm": "^0.45.2",
     "next": "^16.2.12",

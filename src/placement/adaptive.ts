@@ -13,7 +13,7 @@
  * for interruption safety.
  */
 
-import { CEFR_LEVELS, levelIndex, type CefrLevel } from '@/skill-graph/types'
+import { CEFR_LEVELS, levelIndex, type CefrLevel, type SkillArea } from '@/skill-graph/types'
 import type { McqItem } from '@/items/types'
 import type { PlacementConfig, PlacementState, PlacementResult, LevelResult } from './types'
 
@@ -30,7 +30,7 @@ export function createPlacementState(config: PlacementConfig): PlacementState {
     currentLevel: config.startLevel,
     itemsAnswered: 0,
     levelResults: {},
-    // Arrays instead of Sets — serialization-safe by construction.
+    skillResults: {},
     answeredItemIds: [],
     finished: false,
     direction: null,
@@ -74,6 +74,7 @@ export function recordAnswer(
   itemId: string,
   correct: boolean,
   _now: number,
+  skillArea?: SkillArea,
 ): PlacementState {
   const level = state.currentLevel
 
@@ -87,6 +88,18 @@ export function recordAnswer(
     },
   }
 
+  // Track per-skill results when skill area is provided.
+  let skillResults = state.skillResults
+  if (skillArea) {
+    const skillForArea = { ...(state.skillResults[skillArea] ?? {}) }
+    const existingSkill: LevelResult = skillForArea[level] ?? { correct: 0, total: 0 }
+    skillForArea[level] = {
+      correct: existingSkill.correct + (correct ? 1 : 0),
+      total: existingSkill.total + 1,
+    }
+    skillResults = { ...state.skillResults, [skillArea]: skillForArea }
+  }
+
   // Track which items have been answered (array, not Set).
   const answeredItemIds = [...state.answeredItemIds, itemId]
   const itemsAnswered = state.itemsAnswered + 1
@@ -94,6 +107,7 @@ export function recordAnswer(
   let nextState: PlacementState = {
     ...state,
     levelResults,
+    skillResults,
     answeredItemIds,
     itemsAnswered,
   }
@@ -211,10 +225,30 @@ export function getResult(state: PlacementState): PlacementResult {
     confidence = 'moderate'
   }
 
+  // Per-skill level breakdown: for each skill with data, find the highest
+  // level that passes the threshold. Uses the same logic as the overall level.
+  const perSkillLevels: Partial<Record<SkillArea, CefrLevel>> = {}
+  for (const [skill, skillLevelResults] of Object.entries(state.skillResults)) {
+    let skillLevel: CefrLevel = 'preA1'
+    for (const level of TESTABLE_LEVELS) {
+      const result = skillLevelResults[level]
+      if (!result || result.total === 0) continue
+      if (result.correct / result.total >= state.config.correctThreshold) {
+        skillLevel = level
+      }
+    }
+    // Only include skills where at least 2 items were answered.
+    const totalItems = Object.values(skillLevelResults).reduce((sum, r) => sum + r.total, 0)
+    if (totalItems >= 2) {
+      perSkillLevels[skill as SkillArea] = skillLevel
+    }
+  }
+
   return {
     estimatedLevel,
     confidence,
     levelResults: { ...state.levelResults },
+    perSkillLevels,
     itemsUsed: state.itemsAnswered,
     answeredItemIds: [...state.answeredItemIds],
   }

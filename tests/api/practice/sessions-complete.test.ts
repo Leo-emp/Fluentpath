@@ -1,5 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+
+// Mock auth before importing route handlers.
+vi.mock('@/app/api/_lib/auth', () => ({
+  getAuthenticatedLearner: vi.fn(),
+}))
+
+import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
 import { makeTestDb } from '../../helpers/test-db'
 import { _setTestDb } from '@/app/api/_lib/db'
 import { POST } from '@/app/api/practice/sessions/[id]/complete/route'
@@ -28,6 +35,10 @@ function makeParams(id: string) {
 beforeEach(async () => {
   db = await makeTestDb()
   _setTestDb(db)
+  vi.mocked(getAuthenticatedLearner).mockResolvedValue({
+    learnerId: 'learner.1',
+    email: 'test@test.com',
+  })
   await db.insert(learners).values({ id: 'learner.1', email: 'test@test.com', createdAt: NOW, updatedAt: NOW })
   // Insert a node so recordOutcomes can validate it.
   await upsertNodes(db, [
@@ -37,6 +48,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   _setTestDb(null)
+  vi.restoreAllMocks()
 })
 
 describe('POST /api/practice/sessions/[id]/complete', () => {
@@ -45,7 +57,6 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
 
     const res = await POST(
       postRequest(sessionId, {
-        learnerId: 'learner.1',
         outcomes: [{ nodeId: 'gram.a1.be', outcome: 1, difficulty: 0.5 }],
       }),
       makeParams(sessionId),
@@ -60,7 +71,7 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
 
   it('returns 404 for unknown session', async () => {
     const res = await POST(
-      postRequest('ghost', { learnerId: 'learner.1', outcomes: [] }),
+      postRequest('ghost', { outcomes: [] }),
       makeParams('ghost'),
     )
     expect(res.status).toBe(404)
@@ -71,7 +82,7 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
     await completePracticeSession(db, sessionId, NOW)
 
     const res = await POST(
-      postRequest(sessionId, { learnerId: 'learner.1', outcomes: [] }),
+      postRequest(sessionId, { outcomes: [] }),
       makeParams(sessionId),
     )
     expect(res.status).toBe(400)
@@ -79,12 +90,17 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
     expect(data.error).toContain('completed')
   })
 
-  it('returns 403 when learnerId does not match session owner', async () => {
+  it('returns 403 when a different user tries to complete', async () => {
     const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
+
+    // Switch to a different authenticated user.
+    vi.mocked(getAuthenticatedLearner).mockResolvedValue({
+      learnerId: 'evil.attacker',
+      email: 'evil@test.com',
+    })
 
     const res = await POST(
       postRequest(sessionId, {
-        learnerId: 'evil.attacker',
         outcomes: [{ nodeId: 'gram.a1.be', outcome: 1, difficulty: 0.5 }],
       }),
       makeParams(sessionId),
@@ -92,21 +108,23 @@ describe('POST /api/practice/sessions/[id]/complete', () => {
     expect(res.status).toBe(403)
   })
 
-  it('returns 400 when learnerId is missing', async () => {
+  it('returns 400 when outcomes is missing', async () => {
     const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
     const res = await POST(
-      postRequest(sessionId, { outcomes: [] }),
+      postRequest(sessionId, {}),
       makeParams(sessionId),
     )
     expect(res.status).toBe(400)
   })
 
-  it('returns 400 when outcomes is missing', async () => {
-    const sessionId = await createPracticeSession(db, 'learner.1', PLAN, NOW)
+  it('returns 401 when not authenticated', async () => {
+    const { AuthError } = await import('@/app/api/_lib/validate')
+    vi.mocked(getAuthenticatedLearner).mockRejectedValue(new AuthError())
+
     const res = await POST(
-      postRequest(sessionId, { learnerId: 'learner.1' }),
-      makeParams(sessionId),
+      postRequest('any', { outcomes: [] }),
+      makeParams('any'),
     )
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(401)
   })
 })

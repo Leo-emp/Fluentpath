@@ -229,4 +229,34 @@ describe('getResult', () => {
     expect(Array.isArray(result.answeredItemIds)).toBe(true)
     expect(result.answeredItemIds).toContain('b1_0')
   })
+
+  it('returns empty perSkillLevels when no skill data is tracked', () => {
+    let state = createPlacementState(DEFAULT_CONFIG)
+    state = recordAnswer(state, 'b1_0', true, NOW)
+    state = recordAnswer(state, 'b1_1', true, NOW)
+    state = recordAnswer(state, 'b1_2', false, NOW)
+    const result = getResult(state)
+    expect(result.perSkillLevels).toEqual({})
+  })
+
+  it('computes per-skill levels when skill area is provided', () => {
+    let state = createPlacementState(DEFAULT_CONFIG)
+    // 2 grammar items at B1: both correct → grammar passes B1.
+    state = recordAnswer(state, 'b1_0', true, NOW, 'general')
+    state = recordAnswer(state, 'b1_1', true, NOW, 'general')
+    // 1 reading item at B1: incorrect.
+    state = recordAnswer(state, 'b1_2', false, NOW, 'reading')
+    // B1 overall: 2/3 → passes (threshold 0.66).
+    // Now at B2. Fail B2.
+    state = recordAnswer(state, 'b2_0', false, NOW, 'general')
+    state = recordAnswer(state, 'b2_1', false, NOW, 'reading')
+    state = recordAnswer(state, 'b2_2', false, NOW, 'reading')
+
+    const result = getResult(state)
+    expect(result.estimatedLevel).toBe('B1')
+    // 'general' had 2 correct at B1 (100%), 0 at B2 → B1.
+    expect(result.perSkillLevels.general).toBe('B1')
+    // 'reading' had 0 at B1 + 0 at B2 → preA1 (3 items total, meets threshold).
+    expect(result.perSkillLevels.reading).toBe('preA1')
+  })
 })

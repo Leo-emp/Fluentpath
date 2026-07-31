@@ -18,7 +18,7 @@
 import type { DiagnosisInput, Diagnosis } from './types'
 import { attributeOutcomes } from './attribute'
 import { rankWeakNodes } from './rank'
-import { classifyGaps } from './classify'
+import { classifyGaps, detectConfusablePairs } from './classify'
 import { buildActionPlan } from './plan'
 import { projectBandImpact } from './project'
 
@@ -36,7 +36,10 @@ export function diagnose(input: DiagnosisInput): Diagnosis {
   const weakNodes = rankWeakNodes(outcomes, input.nodes)
 
   // Stage 3: Classify root causes for each weak node.
-  const gaps = classifyGaps(weakNodes, outcomes)
+  const gaps = classifyGaps(weakNodes, outcomes, { l1: input.l1 })
+
+  // Detect recurring misconception patterns.
+  const confusablePairs = detectConfusablePairs(outcomes)
 
   // Stage 4: Build the remediation plan respecting prerequisites.
   const actionPlan = buildActionPlan(gaps, input.edges)
@@ -58,5 +61,6 @@ export function diagnose(input: DiagnosisInput): Diagnosis {
     gaps,
     actionPlan,
     bandImpacts,
+    confusablePairs,
   }
 }

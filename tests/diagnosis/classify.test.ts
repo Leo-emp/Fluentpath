@@ -168,4 +168,56 @@ describe('classifyGaps', () => {
   it('returns empty array when no weak nodes', () => {
     expect(classifyGaps([], [])).toHaveLength(0)
   })
+
+  it('detects L1 interference for Thai article errors', () => {
+    const weak = makeWeakNode({
+      nodeId: 'gram.a2.articles',
+      nodeTitle: 'Articles a/an/the',
+      nodeType: 'grammar',
+      accuracy: 0.2,
+    })
+    const outcomes = [
+      makeOutcome({ nodeId: 'gram.a2.articles', correct: false, selectedMisconception: 'drops the article before a countable noun' }),
+      makeOutcome({ nodeId: 'gram.a2.articles', correct: false }),
+    ]
+    const gaps = classifyGaps([weak], outcomes, { l1: 'th' })
+    expect(gaps[0]!.l1Interference).not.toBeNull()
+    expect(gaps[0]!.l1Interference).toContain('Thai')
+    expect(gaps[0]!.evidence).toContain('L1 transfer')
+  })
+
+  it('detects L1 interference for Arabic copula errors', () => {
+    const weak = makeWeakNode({
+      nodeId: 'gram.a1.verb_be',
+      nodeTitle: 'Verb to be (copula)',
+      nodeType: 'grammar',
+      accuracy: 0.3,
+    })
+    const outcomes = [
+      makeOutcome({ nodeId: 'gram.a1.verb_be', correct: false, selectedMisconception: 'omits the copula is/are' }),
+    ]
+    const gaps = classifyGaps([weak], outcomes, { l1: 'ar' })
+    expect(gaps[0]!.l1Interference).not.toBeNull()
+    expect(gaps[0]!.l1Interference).toContain('Arabic')
+  })
+
+  it('returns null l1Interference when no L1 is provided', () => {
+    const weak = makeWeakNode({
+      nodeId: 'gram.a2.articles',
+      nodeTitle: 'Articles a/an/the',
+    })
+    const outcomes = [makeOutcome({ nodeId: 'gram.a2.articles', correct: false })]
+    const gaps = classifyGaps([weak], outcomes)
+    expect(gaps[0]!.l1Interference).toBeNull()
+  })
+
+  it('returns null l1Interference when L1 has no matching rule', () => {
+    const weak = makeWeakNode({
+      nodeId: 'gram.b1.present_perfect',
+      nodeTitle: 'Present Perfect',
+    })
+    const outcomes = [makeOutcome({ correct: false })]
+    const gaps = classifyGaps([weak], outcomes, { l1: 'fr' })
+    expect(gaps[0]!.l1Interference).toBeNull()
+  })
 })

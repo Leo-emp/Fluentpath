@@ -114,6 +114,10 @@ export interface ClassifiedGap {
   meanLatencyMs: number
   impact: number
   rank: number
+  // L1 interference: when the learner's L1 predicts this specific error
+  // pattern, this field explains the transfer effect and suggests a
+  // targeted remedy. Null when L1 is unknown or no rule matches.
+  l1Interference?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -226,6 +230,9 @@ export interface DiagnosisInput {
   masteryRecords: import('@/mastery/types').MasteryRecord[]
   // Rubric criterion weights (for band impact projection).
   criterionWeights: Record<string, number>
+  // Learner's first language (ISO 639-1 code). When provided, the
+  // diagnosis engine checks for L1-specific interference patterns.
+  l1?: string | null
   // Current timestamp.
   now: number
 }

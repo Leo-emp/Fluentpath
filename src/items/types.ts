@@ -35,6 +35,8 @@ export interface McqItem {
   nodeIds: string[]
   /** The level this item is written for. */
   level: CefrLevel
+  /** 0–1 difficulty within the node (0 = easiest). Null when unset. */
+  difficulty?: number | null
 }
 
 export type IssueSeverity = 'reject' | 'warn'
