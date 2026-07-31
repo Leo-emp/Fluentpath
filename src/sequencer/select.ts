@@ -24,7 +24,7 @@ export const REVIEW_THRESHOLD = 0.75
 
 export interface Candidate {
   node: SkillNode
-  reason: 'review' | 'new'
+  reason: 'review' | 'new' | 'remediation'
   /** Higher is more urgent. */
   priority: number
 }
