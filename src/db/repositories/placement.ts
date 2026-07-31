@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 import { placementResults } from '@/db/schema/placement-results'
 import { generateId } from '@/db/id'
 import type { Db } from '@/db/client'
@@ -89,6 +89,28 @@ export async function updatePlacementState(
  * completion timestamp. After this, the placement no longer
  * appears as "active".
  */
+/**
+ * Find the most recently completed placement test for a learner.
+ *
+ * Returns undefined if no completed placement exists (new user
+ * or never finished a placement test).
+ */
+export async function findLatestCompletedPlacement(db: Db, learnerId: string) {
+  const rows = await db
+    .select()
+    .from(placementResults)
+    .where(
+      and(
+        eq(placementResults.learnerId, learnerId),
+        eq(placementResults.status, 'completed'),
+      ),
+    )
+    .orderBy(desc(placementResults.completedAt))
+    .limit(1)
+
+  return rows[0]
+}
+
 export async function completePlacement(
   db: Db,
   id: string,
