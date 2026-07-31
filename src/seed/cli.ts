@@ -11,7 +11,8 @@ async function main() {
   const url = process.env.TURSO_DATABASE_URL ?? 'file:./local.db'
   const authToken = process.env.TURSO_AUTH_TOKEN
 
-  console.log(`Seeding database: ${url.startsWith('libsql') ? url.split('?')[0] : url}`)
+  const label = url.startsWith('file:') ? 'local' : 'remote'
+  console.log(`Seeding database: ${label}`)
 
   const client = createClient({ url, authToken })
   const db = drizzle(client, { schema })
