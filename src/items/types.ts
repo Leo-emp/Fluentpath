@@ -53,6 +53,11 @@ export type ItemIssueCode =
   | 'MISCONCEPTION_MISMATCH'
   | 'NEAR_DUPLICATE'
   | 'OFF_TARGET'
+  // LLM-judged quality dimensions (R1b-e).
+  | 'UNNATURAL'
+  | 'INAUTHENTIC_CONTEXT'
+  | 'TEACHER_REJECT'
+  | 'WEAK_EXPLANATION'
 
 export interface ItemIssue {
   code: ItemIssueCode

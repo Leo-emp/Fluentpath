@@ -165,6 +165,158 @@ describe('generateItem', () => {
     expect(captured!.prompt).toContain('JSON')
   })
 
+  // ─── LLM quality gates ─────────────────────────────────────────────────
+
+  it('skips LLM gates when qualityProvider is absent (backwards compat)', async () => {
+    const provider = sequenceProvider([GOOD_MCQ])
+    const result = await generateItem(provider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.1',
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.review!.passed).toBe(true)
+    const llmCodes = ['UNNATURAL', 'INAUTHENTIC_CONTEXT', 'TEACHER_REJECT', 'WEAK_EXPLANATION']
+    expect(result.review!.issues.filter((i) => llmCodes.includes(i.code))).toHaveLength(0)
+  })
+
+  it('runs LLM gates when qualityProvider is present and passes', async () => {
+    const genProvider = sequenceProvider([GOOD_MCQ])
+    const qualityProvider = sequenceProvider([
+      {
+        naturalness: { verdict: 'pass', reason: 'Natural' },
+        authenticity: { verdict: 'pass', reason: 'Plausible' },
+        teacherTest: { verdict: 'pass', reason: 'Usable' },
+        explanatoryTransfer: { verdict: 'pass', reason: 'Helpful' },
+      },
+    ])
+
+    const result = await generateItem(genProvider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.2',
+      qualityProvider,
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.review!.passed).toBe(true)
+    expect(result.attempts).toHaveLength(1)
+    expect(result.attempts[0]!.kind).toBe('success')
+  })
+
+  it('rejects when LLM gates fail and retries', async () => {
+    const genProvider = sequenceProvider([GOOD_MCQ, GOOD_MCQ])
+
+    let qualityCalls = 0
+    const qualityProvider: GenerationProvider = {
+      async generate(): Promise<GenerationResponse> {
+        qualityCalls++
+        if (qualityCalls === 1) {
+          return {
+            raw: JSON.stringify({
+              naturalness: { verdict: 'reject', reason: 'Stilted' },
+              authenticity: { verdict: 'pass', reason: 'OK' },
+              teacherTest: { verdict: 'pass', reason: 'OK' },
+              explanatoryTransfer: { verdict: 'pass', reason: 'OK' },
+            }),
+            parsed: null,
+          }
+        }
+        return {
+          raw: JSON.stringify({
+            naturalness: { verdict: 'pass', reason: 'Natural' },
+            authenticity: { verdict: 'pass', reason: 'OK' },
+            teacherTest: { verdict: 'pass', reason: 'OK' },
+            explanatoryTransfer: { verdict: 'pass', reason: 'OK' },
+          }),
+          parsed: null,
+        }
+      },
+    }
+
+    const result = await generateItem(genProvider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.3',
+      qualityProvider,
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.review!.passed).toBe(true)
+    expect(result.attempts).toHaveLength(2)
+    expect(result.attempts[0]!.kind).toBe('gate_failure')
+    const firstReview = (result.attempts[0] as { kind: 'gate_failure'; review: { issues: Array<{ code: string }> } }).review
+    expect(firstReview.issues.some((i) => i.code === 'UNNATURAL')).toBe(true)
+    expect(result.attempts[1]!.kind).toBe('success')
+  })
+
+  it('fail-open: LLM returns garbage, item still passes', async () => {
+    const genProvider = sequenceProvider([GOOD_MCQ])
+    const qualityProvider = sequenceProvider(['I cannot evaluate this.'])
+
+    const result = await generateItem(genProvider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.4',
+      qualityProvider,
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.review!.passed).toBe(true)
+    expect(result.attempts).toHaveLength(1)
+    expect(result.attempts[0]!.kind).toBe('success')
+  })
+
+  it('LLM warnings appear in the review but do not block', async () => {
+    const genProvider = sequenceProvider([GOOD_MCQ])
+    const qualityProvider = sequenceProvider([
+      {
+        naturalness: { verdict: 'pass', reason: '' },
+        authenticity: { verdict: 'warn', reason: 'Borderline scenario' },
+        teacherTest: { verdict: 'pass', reason: '' },
+        explanatoryTransfer: { verdict: 'pass', reason: '' },
+      },
+    ])
+
+    const result = await generateItem(genProvider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.5',
+      qualityProvider,
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.review!.passed).toBe(true)
+    expect(result.review!.issues.some((i) => i.code === 'INAUTHENTIC_CONTEXT' && i.severity === 'warn')).toBe(true)
+  })
+
+  it('does not call qualityProvider when deterministic gates fail', async () => {
+    const genProvider = sequenceProvider([BAD_MCQ, GOOD_MCQ])
+    let qualityCalls = 0
+    const qualityProvider: GenerationProvider = {
+      async generate(): Promise<GenerationResponse> {
+        qualityCalls++
+        return {
+          raw: JSON.stringify({
+            naturalness: { verdict: 'pass', reason: '' },
+            authenticity: { verdict: 'pass', reason: '' },
+            teacherTest: { verdict: 'pass', reason: '' },
+            explanatoryTransfer: { verdict: 'pass', reason: '' },
+          }),
+          parsed: null,
+        }
+      },
+    }
+
+    const result = await generateItem(genProvider, inventory, {
+      node: node(),
+      itemId: 'item.gen.llm.6',
+      qualityProvider,
+    })
+
+    expect(result.item).not.toBeNull()
+    expect(result.attempts).toHaveLength(2)
+    expect(result.attempts[0]!.kind).toBe('gate_failure')
+    // Only 1 quality call (for the second attempt that passed deterministic).
+    expect(qualityCalls).toBe(1)
+  })
+
   it('handles markdown-fenced JSON from the model', async () => {
     const fenced = '```json\n' + JSON.stringify(GOOD_MCQ, null, 2) + '\n```'
     const provider = sequenceProvider([fenced])

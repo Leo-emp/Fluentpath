@@ -7,6 +7,7 @@ import type { ReviewContext } from '@/items/review'
 import { buildConstraints, renderConstraints } from './constraints'
 import type { GenerationProvider, GeneratedMcq } from './provider'
 import { parseModelOutput } from './provider'
+import { reviewItemLlm } from '@/items/llm-review'
 
 // How many times to retry before giving up. Each attempt costs money and
 // latency, so this is kept low. Three retries means four total attempts —
@@ -22,6 +23,9 @@ export interface GenerateItemRequest {
   itemId: string
   // Stems already in the item bank, for duplicate detection.
   existingStems?: string[]
+  // When provided, LLM quality gates run on items that pass the
+  // deterministic gates. When absent, LLM gates are skipped.
+  qualityProvider?: GenerationProvider
 }
 
 export type AttemptOutcome =
@@ -87,8 +91,24 @@ export async function generateItem(
       continue
     }
 
-    attempts.push({ kind: 'success', item, review })
-    return { item, review, attempts }
+    // LLM quality gates: run only on items that passed deterministic
+    // gates, and only when a quality provider is configured.
+    let finalReview = review
+    if (request.qualityProvider) {
+      const llmResult = await reviewItemLlm(item, request.qualityProvider, request.node.title)
+      // Merge deterministic and LLM issues into one review.
+      finalReview = {
+        passed: llmResult.passed,
+        issues: [...review.issues, ...llmResult.issues],
+      }
+      if (!finalReview.passed) {
+        attempts.push({ kind: 'gate_failure', item, review: finalReview })
+        continue
+      }
+    }
+
+    attempts.push({ kind: 'success', item, review: finalReview })
+    return { item, review: finalReview, attempts }
   }
 
   // All attempts exhausted. Return the last gate failure if one exists, so the
