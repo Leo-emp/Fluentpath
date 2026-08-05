@@ -40,7 +40,7 @@ function nd(
 }
 
 // ---------------------------------------------------------------------------
-// Nodes (45 total)
+// Nodes (54 total)
 // ---------------------------------------------------------------------------
 
 export const SEED_NODES: SkillNode[] = [
@@ -172,10 +172,37 @@ export const SEED_NODES: SkillNode[] = [
   nd('strat.ielts.part3_extend', 'strategy', 'B2', 'speaking',
     'IELTS Speaking Part 3: extending answers',
     'Speculate, exemplify, compare, evaluate'),
+
+  // ── C1/C2 Grammar (3 nodes) ────────────────────────────────────────
+  // # Advanced grammar structures used in formal/academic contexts.
+  // # Inversion and cleft sentences are C1; subjunctive is C2.
+  n('gram.c1.inversion', 'grammar', 'C1', 'general', 'Inversion after negative adverbials'),
+  n('gram.c1.cleft_sentences', 'grammar', 'C1', 'general', 'Cleft sentences: it-clefts and wh-clefts'),
+  n('gram.c2.subjunctive', 'grammar', 'C2', 'general', 'Subjunctive mood'),
+
+  // ── C1/C2 Lexical (2 nodes) ────────────────────────────────────────
+  // # Academic word list feeds into idiomatic mastery at C2.
+  n('lex.c1.academic_vocabulary', 'lexical', 'C1', 'general', 'Academic word list'),
+  n('lex.c2.idiomatic_language', 'lexical', 'C2', 'general', 'Idiomatic and figurative language'),
+
+  // ── C2 Can-do (4 nodes) ────────────────────────────────────────────
+  // # Full CEFR C2 proficiency descriptors across the four skills.
+  nd('cando.c2.understand_any_speech', 'cando', 'C2', 'listening',
+    'Can understand any kind of spoken language',
+    'Live or broadcast, at fast speed, even with some noise'),
+  nd('cando.c2.read_any_text', 'cando', 'C2', 'reading',
+    'Can read virtually all forms of written language',
+    'Including abstract, structurally complex, or highly colloquial texts'),
+  nd('cando.c2.write_complex_reports', 'cando', 'C2', 'writing',
+    'Can write complex reports and articles with clear structure',
+    'Appropriate style, effective logical structure, reader perspective'),
+  nd('cando.c2.discuss_any_topic', 'cando', 'C2', 'speaking',
+    'Can discuss any topic fluently and precisely',
+    'Fine shades of meaning, backtracking, restructuring naturally'),
 ]
 
 // ---------------------------------------------------------------------------
-// Edges (49 total)
+// Edges (62 total)
 // ---------------------------------------------------------------------------
 
 export const SEED_EDGES: SkillEdge[] = [
@@ -284,4 +311,30 @@ export const SEED_EDGES: SkillEdge[] = [
   // Time management supports task completion in timed writing sections.
   { fromNodeId: 'strat.ielts.time_management', toNodeId: 'strat.ielts.task1_structure', strength: 0.3 },
   { fromNodeId: 'strat.ielts.time_management', toNodeId: 'strat.ielts.task2_structure', strength: 0.3 },
+
+  // ── C1/C2 Grammar progression (3 edges) ──────────────────────────
+  // # Passive voice understanding feeds inversion; conditionals feed cleft
+  // # sentences; inversion is the gateway to the C2 subjunctive.
+  { fromNodeId: 'gram.b2.passive', toNodeId: 'gram.c1.inversion', strength: 0.7 },
+  { fromNodeId: 'gram.b2.conditionals', toNodeId: 'gram.c1.cleft_sentences', strength: 0.7 },
+  { fromNodeId: 'gram.c1.inversion', toNodeId: 'gram.c2.subjunctive', strength: 0.5 },
+
+  // ── C1/C2 Lexical progression (2 edges) ──────────────────────────
+  // # Abstract concepts → academic vocabulary → idiomatic language.
+  { fromNodeId: 'lex.b2.abstract_concepts', toNodeId: 'lex.c1.academic_vocabulary', strength: 0.5 },
+  { fromNodeId: 'lex.c1.academic_vocabulary', toNodeId: 'lex.c2.idiomatic_language', strength: 0.5 },
+
+  // ── C2 Can-do chains (4 edges) ───────────────────────────────────
+  // # Each C2 can-do extends the top of its skill's chain.
+  { fromNodeId: 'cando.c1.understand_lecture', toNodeId: 'cando.c2.understand_any_speech', strength: 1 },
+  { fromNodeId: 'cando.c1.understand_abstract_text', toNodeId: 'cando.c2.read_any_text', strength: 1 },
+  { fromNodeId: 'cando.b2.write_essay', toNodeId: 'cando.c2.write_complex_reports', strength: 1 },
+  { fromNodeId: 'cando.b2.discuss_abstract', toNodeId: 'cando.c2.discuss_any_topic', strength: 1 },
+
+  // ── Cross-type: C1/C2 grammar → can-do (4 edges) ────────────────
+  // # Advanced grammar structures support the highest communicative skills.
+  { fromNodeId: 'gram.c1.inversion', toNodeId: 'cando.c2.write_complex_reports', strength: 0.3 },
+  { fromNodeId: 'gram.c1.cleft_sentences', toNodeId: 'cando.c2.discuss_any_topic', strength: 0.3 },
+  { fromNodeId: 'lex.c1.academic_vocabulary', toNodeId: 'cando.c2.read_any_text', strength: 0.3 },
+  { fromNodeId: 'lex.c2.idiomatic_language', toNodeId: 'cando.c2.discuss_any_topic', strength: 0.3 },
 ]
