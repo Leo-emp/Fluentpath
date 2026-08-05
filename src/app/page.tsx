@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Footer } from '@/components/footer'
 
 export default function Home() {
   return (
@@ -11,7 +12,7 @@ export default function Home() {
           Precisely.
         </h1>
         <p className="mb-10 max-w-md text-lg text-muted-foreground">
-          Adaptive placement, targeted practice, and full IELTS mock tests
+          Adaptive placement, targeted practice, and full IELTS, PTE Academic &amp; OET mock tests
           — all in one platform.
         </p>
         <div className="flex items-center gap-4">
@@ -36,7 +37,7 @@ export default function Home() {
           {[
             { title: 'Adaptive Placement', desc: 'Find your CEFR level in under 5 minutes.' },
             { title: 'Targeted Practice', desc: 'Exercises matched to your weakest areas.' },
-            { title: 'IELTS Mock Tests', desc: 'Full-length timed exams with band scores.' },
+            { title: 'Mock Tests', desc: 'Full-length timed IELTS, PTE Academic & OET exams with score breakdowns.' },
           ].map((card) => (
             <div key={card.title} className="rounded-lg border border-border p-6">
               <h3 className="mb-2 font-serif text-xl font-bold">{card.title}</h3>
@@ -46,10 +47,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* # Footer */}
-      <footer className="border-t border-border px-6 py-6 text-center text-sm text-muted-foreground">
-        &copy; 2026 FluentPath
-      </footer>
+      {/* # Footer — shared component with legal links + disclaimer */}
+      <Footer />
     </main>
   )
 }

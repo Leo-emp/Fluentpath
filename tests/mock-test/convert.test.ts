@@ -1,12 +1,26 @@
 import { describe, it, expect } from 'vitest'
 import {
   convertRawToBand,
+  convertScoreToGrade,
   roundToHalf,
   computeOverallBand,
   computeTestResult,
 } from '@/mock-test/convert'
 import { IELTS_ACADEMIC } from '@/mock-test/exams/ielts-academic'
-import type { PerformanceRecord } from '@/mock-test/types'
+import type { GradeConversionTable, PerformanceRecord } from '@/mock-test/types'
+
+// # OET grade conversion table used across tests.
+// # Entries ordered descending by minScore — first match wins.
+const OET_GRADES: GradeConversionTable = {
+  entries: [
+    { minScore: 450, grade: 'A' },
+    { minScore: 350, grade: 'B' },
+    { minScore: 300, grade: 'C+' },
+    { minScore: 200, grade: 'C' },
+    { minScore: 100, grade: 'D' },
+    { minScore: 0, grade: 'E' },
+  ],
+}
 
 describe('convertRawToBand', () => {
   const table = IELTS_ACADEMIC.scoring.sectionConversions['listening']!
@@ -44,6 +58,57 @@ describe('convertRawToBand', () => {
     expect(convertRawToBand(30, readingTable)).toBe(7)
     expect(convertRawToBand(23, readingTable)).toBe(6)
     expect(convertRawToBand(15, readingTable)).toBe(5)
+  })
+})
+
+describe('convertScoreToGrade', () => {
+  // # OET grade conversion: numerical score → letter grade.
+  it('converts 500 to A (above top threshold)', () => {
+    expect(convertScoreToGrade(500, OET_GRADES)).toBe('A')
+  })
+
+  it('converts 450 to A (exact boundary)', () => {
+    expect(convertScoreToGrade(450, OET_GRADES)).toBe('A')
+  })
+
+  it('converts 440 to B (just below A)', () => {
+    expect(convertScoreToGrade(440, OET_GRADES)).toBe('B')
+  })
+
+  it('converts 350 to B (exact boundary)', () => {
+    expect(convertScoreToGrade(350, OET_GRADES)).toBe('B')
+  })
+
+  it('converts 340 to C+ (just below B)', () => {
+    expect(convertScoreToGrade(340, OET_GRADES)).toBe('C+')
+  })
+
+  it('converts 300 to C+ (exact boundary)', () => {
+    expect(convertScoreToGrade(300, OET_GRADES)).toBe('C+')
+  })
+
+  it('converts 290 to C (just below C+)', () => {
+    expect(convertScoreToGrade(290, OET_GRADES)).toBe('C')
+  })
+
+  it('converts 200 to C (exact boundary)', () => {
+    expect(convertScoreToGrade(200, OET_GRADES)).toBe('C')
+  })
+
+  it('converts 190 to D (just below C)', () => {
+    expect(convertScoreToGrade(190, OET_GRADES)).toBe('D')
+  })
+
+  it('converts 100 to D (exact boundary)', () => {
+    expect(convertScoreToGrade(100, OET_GRADES)).toBe('D')
+  })
+
+  it('converts 90 to E (just below D)', () => {
+    expect(convertScoreToGrade(90, OET_GRADES)).toBe('E')
+  })
+
+  it('converts 0 to E (minimum)', () => {
+    expect(convertScoreToGrade(0, OET_GRADES)).toBe('E')
   })
 })
 
@@ -104,6 +169,43 @@ describe('computeOverallBand', () => {
 
   it('handles single section', () => {
     expect(computeOverallBand({ writing: 6 }, 'mean_round_half')).toBe(6)
+  })
+
+  // # PTE: mean rounded to nearest integer.
+  it('PTE: L65 R70 S55 W60 → mean 62.5 → rounds to 63', () => {
+    const result = computeOverallBand(
+      { listening: 65, reading: 70, speaking: 55, writing: 60 },
+      'mean_round_int',
+    )
+    expect(result).toBe(63)
+  })
+
+  it('PTE: L80 R80 S80 W80 → 80', () => {
+    const result = computeOverallBand(
+      { listening: 80, reading: 80, speaking: 80, writing: 80 },
+      'mean_round_int',
+    )
+    expect(result).toBe(80)
+  })
+
+  it('PTE: L45 R50 S40 W55 → mean 47.5 → rounds to 48', () => {
+    const result = computeOverallBand(
+      { listening: 45, reading: 50, speaking: 40, writing: 55 },
+      'mean_round_int',
+    )
+    expect(result).toBe(48)
+  })
+
+  // # OET: no overall score.
+  it('OET (none): any input returns 0', () => {
+    expect(computeOverallBand(
+      { listening: 350, reading: 400, speaking: 300, writing: 280 },
+      'none',
+    )).toBe(0)
+  })
+
+  it('OET (none): empty input also returns 0', () => {
+    expect(computeOverallBand({}, 'none')).toBe(0)
   })
 })
 

@@ -15,6 +15,7 @@
 
 import type {
   BandConversionTable,
+  GradeConversionTable,
   OverallRule,
   PerformanceRecord,
   ExamDefinition,
@@ -33,6 +34,20 @@ export function convertRawToBand(raw: number, table: BandConversionTable): numbe
     if (raw >= entry.minRaw) return entry.band
   }
   return 0
+}
+
+/**
+ * Convert a numerical score to a letter grade using a grade table.
+ *
+ * # Used by OET. The table entries are ordered descending by minScore.
+ * # The first entry whose minScore the score meets or exceeds gives the grade.
+ * # Returns '?' if score is below all entries (or the table is empty).
+ */
+export function convertScoreToGrade(score: number, table: GradeConversionTable): string {
+  for (const entry of table.entries) {
+    if (score >= entry.minScore) return entry.grade
+  }
+  return '?'
 }
 
 /**
@@ -64,8 +79,18 @@ export function computeOverallBand(
 
   switch (rule) {
     case 'mean_round_half': {
+      // # IELTS: mean of section bands, rounded to nearest 0.5.
       const mean = bands.reduce((sum, b) => sum + b, 0) / bands.length
       return roundToHalf(mean)
+    }
+    case 'mean_round_int': {
+      // # PTE: mean of communicative skill scores, rounded to integer.
+      const mean = bands.reduce((sum, b) => sum + b, 0) / bands.length
+      return Math.round(mean)
+    }
+    case 'none': {
+      // # OET: no overall score. Return 0.
+      return 0
     }
   }
 }

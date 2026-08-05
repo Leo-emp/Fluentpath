@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 onClick={() => router.push('/mock-test')}
               >
                 <h3 className="mb-1 font-serif text-xl font-bold">Mock Test</h3>
-                <p className="text-sm text-muted-foreground">Take a full IELTS exam</p>
+                <p className="text-sm text-muted-foreground">Take a full mock exam</p>
               </Card>
             </div>
 

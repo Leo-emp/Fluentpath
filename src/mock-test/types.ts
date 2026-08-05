@@ -89,9 +89,22 @@ export interface BandConversionTable {
 }
 
 // How the overall band is computed from section bands.
-// 'mean_round_half' = average of all section bands, rounded to nearest 0.5.
-// This is the only rule IELTS uses. Other exams may need different rules.
-export type OverallRule = 'mean_round_half'
+// 'mean_round_half' = average of all section bands, rounded to nearest 0.5 (IELTS).
+// 'mean_round_int' = average rounded to nearest integer (PTE).
+// 'none' = no overall score computed (OET).
+export type OverallRule = 'mean_round_half' | 'mean_round_int' | 'none'
+
+// # Grade conversion for OET: numerical score → letter grade.
+// # Entries ordered descending by minScore — first match wins.
+export interface GradeConversionTable {
+  entries: Array<{ minScore: number; grade: string }>
+}
+
+// # How scores are displayed for this exam.
+// # 'band_0_9' = IELTS (0-9, 0.5 steps)
+// # 'score_10_90' = PTE (10-90, integer)
+// # 'grade_a_e' = OET (A, B, C+, C, D, E)
+export type ScoreScale = 'band_0_9' | 'score_10_90' | 'grade_a_e'
 
 /**
  * How an exam computes its scores.
@@ -103,6 +116,11 @@ export type OverallRule = 'mean_round_half'
 export interface ScoringRule {
   sectionConversions: Record<string, BandConversionTable | null>
   overallRule: OverallRule
+  // # Score display scale — defaults to 'band_0_9' if not set.
+  scoreScale?: ScoreScale
+  // # Grade conversion tables for OET-style scoring.
+  // # Maps section IDs to grade conversion tables.
+  gradeConversions?: Record<string, GradeConversionTable>
 }
 
 /**
