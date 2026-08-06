@@ -321,6 +321,20 @@ const A1_ITEMS: SeedItem[] = [
     correctIndex: 0,
     difficulty: 0.08,
   },
+  {
+    id: 'item.a1.lex.05',
+    level: 'A1', skill: 'general',
+    nodeIds: ['lex.a1.everyday_objects'],
+    stem: 'I write with a ______.',
+    options: [
+      { text: 'pen', misconception: null },
+      { text: 'cup', misconception: 'a cup is for drinking, not writing' },
+      { text: 'shoe', misconception: 'a shoe is worn on the foot, not used for writing' },
+      { text: 'hat', misconception: 'a hat is worn on the head, not used for writing' },
+    ],
+    correctIndex: 0,
+    difficulty: 0.05,
+  },
 
   // # ── cando.a1.read_signs (items read.01–read.04) ──────────────────
   {
