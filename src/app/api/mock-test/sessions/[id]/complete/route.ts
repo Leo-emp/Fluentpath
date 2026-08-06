@@ -14,6 +14,8 @@ import {
 } from '@/db/repositories/test-sessions'
 import { createTestResult } from '@/db/repositories/test-results'
 import type { TestSession } from '@/mock-test/types'
+import { recordActivity } from '@/gamification/streaks'
+import { MOCK_TEST_COMPLETE_XP } from '@/gamification/xp'
 
 export async function POST(
   request: NextRequest,
@@ -53,6 +55,15 @@ export async function POST(
 
     // Mark session as completed.
     await completeSession(db, id, session as unknown as Record<string, unknown>, now)
+
+    // # Record gamification activity — mock test earns bonus XP.
+    const totalItems = session.responses?.length ?? 0
+    await recordActivity(db, learnerId, {
+      itemsCompleted: Math.max(totalItems, 1),
+      xpEarned: MOCK_TEST_COMPLETE_XP,
+      minutesPracticed: Math.round((now - (row.startedAt ?? now)) / 60_000),
+      sessionCompleted: true,
+    }, now)
 
     return jsonOk({
       testResultId: resultRow.id,

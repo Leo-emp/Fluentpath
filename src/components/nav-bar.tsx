@@ -24,8 +24,24 @@ export function NavBar() {
           FluentPath
         </a>
         <div className="flex items-center gap-4">
+          {/* # Nav links — practice, lessons, community */}
           {session && (
             <>
+              <a href="/lessons" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Lessons
+              </a>
+              <a href="/vocabulary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Vocabulary
+              </a>
+              <a href="/grammar" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Grammar
+              </a>
+              <a href="/phrasal-verbs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Phrasal Verbs
+              </a>
+              <a href="/community" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Community
+              </a>
               <span className="text-sm text-muted-foreground">
                 {session.user.name ?? session.user.email}
               </span>

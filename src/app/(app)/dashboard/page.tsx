@@ -9,6 +9,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/nav-bar'
 import { LevelBadge } from '@/components/level-badge'
+import { GamificationPanel } from '@/components/gamification-panel'
+import { ProgressPanel } from '@/components/progress-panel'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { apiFetch } from '@/lib/api'
 import { Card } from '@/components/ui/card'
@@ -31,25 +33,35 @@ interface DiagnosisSummary {
   createdAt: number
 }
 
+// # Gamification data shape from /api/gamification.
+interface GamificationData {
+  streak: { currentStreak: number; longestStreak: number; totalXp: number; weeklyXp: number }
+  activity: { date: string; items: number; xp: number; minutes: number; sessions: number }[]
+  badges: { type: string; earnedAt: number }[]
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [learner, setLearner] = useState<LearnerProfile | null>(null)
   const [activePlacement, setActivePlacement] = useState(false)
   const [diagnoses, setDiagnoses] = useState<DiagnosisSummary[]>([])
+  const [gamification, setGamification] = useState<GamificationData | null>(null)
   const [loading, setLoading] = useState(true)
 
   // # Fetch learner profile + placement status + diagnoses on mount.
   useEffect(() => {
     async function load() {
       try {
-        const [meData, placementData, diagnosisData] = await Promise.all([
+        const [meData, placementData, diagnosisData, gamData] = await Promise.all([
           apiFetch<{ learner: LearnerProfile }>('/api/me'),
           apiFetch<{ placement: unknown | null }>('/api/placement/active'),
           apiFetch<{ diagnoses: DiagnosisSummary[] }>('/api/diagnosis').catch(() => ({ diagnoses: [] })),
+          apiFetch<GamificationData>('/api/gamification').catch(() => null),
         ])
         setLearner(meData.learner)
         setActivePlacement(!!placementData.placement)
         setDiagnoses(diagnosisData.diagnoses)
+        if (gamData) setGamification(gamData)
       } catch {
         // # apiFetch handles 401 redirect automatically.
       } finally {
@@ -121,6 +133,22 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">Take a full mock exam</p>
               </Card>
             </div>
+
+            {/* # Gamification section — streaks, XP, badges, heatmap */}
+            {gamification && (
+              <section className="mb-10">
+                <GamificationPanel
+                  streak={gamification.streak}
+                  activity={gamification.activity}
+                  badges={gamification.badges}
+                />
+              </section>
+            )}
+
+            {/* # Skill progress + predicted IELTS score */}
+            <section className="mb-10">
+              <ProgressPanel />
+            </section>
 
             {/* # State 3: Recent diagnosis reports */}
             {diagnoses.length > 0 && (

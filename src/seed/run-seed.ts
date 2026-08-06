@@ -16,8 +16,26 @@ import { SEED_B2_EXPANDED } from './seed-b2-expanded'
 import { SEED_C1_EXPANDED } from './seed-c1-expanded'
 import { SEED_C2_EXPANDED } from './seed-c2-expanded'
 import { SEED_IELTS_PREP } from './seed-ielts-prep'
+import { SEED_IELTS_READING_EXPANDED } from './seed-ielts-reading-expanded'
+import { SEED_IELTS_LISTENING_EXPANDED } from './seed-ielts-listening-expanded'
+import { SEED_IELTS_WRITING_EXPANDED } from './seed-ielts-writing-expanded'
+import { SEED_IELTS_SPEAKING_EXPANDED } from './seed-ielts-speaking-expanded'
+import { SEED_IELTS_BAND9 } from './seed-ielts-band9'
 import { SEED_PTE_PREP } from './seed-pte-prep'
+import { SEED_PTE_EXPANDED } from './seed-pte-expanded'
 import { SEED_OET_PREP } from './seed-oet-prep'
+import { SEED_OET_EXPANDED } from './seed-oet-expanded'
+import { SEED_A1_READING_LISTENING } from './seed-a1-reading-listening'
+import { SEED_A2_READING_LISTENING } from './seed-a2-reading-listening'
+import { SEED_C2_GAPS } from './seed-c2-gaps'
+import { SEED_B1_READING_BOOST } from './seed-b1-reading-boost'
+import { SEED_OET_LISTENING } from './seed-oet-listening'
+import { SEED_PTE_LISTENING_BOOST } from './seed-pte-listening-boost'
+import { SEED_PTE_READING_PASSAGES } from './seed-pte-reading-passages'
+import { SEED_OET_READING_BOOST } from './seed-oet-reading-boost'
+import { SEED_PHRASAL_VERBS } from './seed-phrasal-verbs'
+import { SEED_GRAMMAR_BOOST } from './seed-grammar-boost'
+import { SEED_VOCABULARY_BOOST } from './seed-vocabulary-boost'
 import { provenance, items, itemVersions, itemNodes } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
@@ -95,8 +113,50 @@ export async function seedGraph(db: Db, now: number): Promise<void> {
   }
 
   // # Seed exam preparation content (IELTS, PTE, OET — authentic exam formats).
-  const examPrepSets = [SEED_IELTS_PREP, SEED_PTE_PREP, SEED_OET_PREP]
+  const examPrepSets = [
+    SEED_IELTS_PREP,
+    SEED_IELTS_READING_EXPANDED,
+    SEED_IELTS_LISTENING_EXPANDED,
+    SEED_IELTS_WRITING_EXPANDED,
+    SEED_IELTS_SPEAKING_EXPANDED,
+    SEED_IELTS_BAND9,
+    SEED_PTE_PREP,
+    SEED_PTE_EXPANDED,
+    SEED_OET_PREP,
+    SEED_OET_EXPANDED,
+  ]
   for (const set of examPrepSets) {
+    for (const item of set) {
+      await seedOneItem(db, item, now)
+    }
+  }
+
+  // # Seed gap-filling content — reading, listening, and missing item types
+  // # for levels that were under-represented (A1, A2, B1, C2).
+  const gapFillers = [
+    SEED_A1_READING_LISTENING,
+    SEED_A2_READING_LISTENING,
+    SEED_B1_READING_BOOST,
+    SEED_C2_GAPS,
+    SEED_OET_LISTENING,
+    SEED_PTE_LISTENING_BOOST,
+    SEED_PTE_READING_PASSAGES,
+    SEED_OET_READING_BOOST,
+  ]
+  for (const set of gapFillers) {
+    for (const item of set) {
+      await seedOneItem(db, item, now)
+    }
+  }
+
+  // # Seed phrasal verbs, grammar boost, and vocabulary exercises
+  // # across all CEFR levels (A1–C2).
+  const languageBoost = [
+    SEED_PHRASAL_VERBS,
+    SEED_GRAMMAR_BOOST,
+    SEED_VOCABULARY_BOOST,
+  ]
+  for (const set of languageBoost) {
     for (const item of set) {
       await seedOneItem(db, item, now)
     }
