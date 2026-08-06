@@ -257,25 +257,3 @@ export const IELTS_ACADEMIC: ExamDefinition = {
   },
 }
 
-// ---------------------------------------------------------------------------
-// Registry — look up definitions by ID
-// ---------------------------------------------------------------------------
-
-// All registered exam definitions. More added in later releases
-// (IELTS General Training, PTE Academic, OET).
-const EXAM_REGISTRY: ExamDefinition[] = [IELTS_ACADEMIC]
-
-/**
- * Look up an exam definition by ID.
- * Returns null if not found.
- */
-export function getExamDefinition(id: string): ExamDefinition | null {
-  return EXAM_REGISTRY.find((e) => e.id === id) ?? null
-}
-
-/**
- * List all registered exam definitions.
- */
-export function listExamDefinitions(): ExamDefinition[] {
-  return [...EXAM_REGISTRY]
-}

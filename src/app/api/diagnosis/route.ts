@@ -13,7 +13,7 @@ import { findLearnerById } from '@/db/repositories/learners'
 import { listNodes, listEdges } from '@/skill-graph/repository'
 import { listMastery } from '@/mastery/repository'
 import { diagnose } from '@/diagnosis/diagnose'
-import { getExamDefinition } from '@/mock-test/exams/ielts-academic'
+import { getExamDefinition } from '@/mock-test/exams/registry'
 import type { DiagnosisInput } from '@/diagnosis/types'
 import type { PerformanceRecord, TestResult } from '@/mock-test/types'
 

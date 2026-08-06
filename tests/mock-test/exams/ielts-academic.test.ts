@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
+import { IELTS_ACADEMIC } from '@/mock-test/exams/ielts-academic'
 import {
-  IELTS_ACADEMIC,
   getExamDefinition,
   listExamDefinitions,
-} from '@/mock-test/exams/ielts-academic'
+} from '@/mock-test/exams/registry'
 
 describe('IELTS Academic exam definition', () => {
   it('has 4 sections in the correct order', () => {

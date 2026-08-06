@@ -4,7 +4,7 @@
 
 import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
-import { listExamDefinitions } from '@/mock-test/exams/ielts-academic'
+import { listExamDefinitions } from '@/mock-test/exams/registry'
 
 export async function GET(_request: NextRequest) {
   try {

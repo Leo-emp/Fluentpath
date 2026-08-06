@@ -7,7 +7,7 @@ import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { ValidationError, AuthError, requireString, requireNumber } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
 import { transition } from '@/mock-test/session'
-import { getExamDefinition } from '@/mock-test/exams/ielts-academic'
+import { getExamDefinition } from '@/mock-test/exams/registry'
 import { findActiveSession, updateSessionState } from '@/db/repositories/test-sessions'
 import type { TestSession, ResponseData, SectionSkill } from '@/mock-test/types'
 

@@ -6,7 +6,7 @@ import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
-import { getExamDefinition } from '@/mock-test/exams/ielts-academic'
+import { getExamDefinition } from '@/mock-test/exams/registry'
 import { computeTestResult } from '@/mock-test/convert'
 import { assemblePerformanceRecord } from '@/mock-test/record'
 import {
