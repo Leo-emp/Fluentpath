@@ -15,6 +15,9 @@ import { SEED_B1_EXPANDED } from './seed-b1-expanded'
 import { SEED_B2_EXPANDED } from './seed-b2-expanded'
 import { SEED_C1_EXPANDED } from './seed-c1-expanded'
 import { SEED_C2_EXPANDED } from './seed-c2-expanded'
+import { SEED_IELTS_PREP } from './seed-ielts-prep'
+import { SEED_PTE_PREP } from './seed-pte-prep'
+import { SEED_OET_PREP } from './seed-oet-prep'
 import { provenance, items, itemVersions, itemNodes } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
@@ -86,6 +89,14 @@ export async function seedGraph(db: Db, now: number): Promise<void> {
     SEED_C1_EXPANDED, SEED_C2_EXPANDED,
   ]
   for (const set of expandedSets) {
+    for (const item of set) {
+      await seedOneItem(db, item, now)
+    }
+  }
+
+  // # Seed exam preparation content (IELTS, PTE, OET — authentic exam formats).
+  const examPrepSets = [SEED_IELTS_PREP, SEED_PTE_PREP, SEED_OET_PREP]
+  for (const set of examPrepSets) {
     for (const item of set) {
       await seedOneItem(db, item, now)
     }

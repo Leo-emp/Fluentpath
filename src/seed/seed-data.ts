@@ -132,6 +132,33 @@ export const SEED_NODES: SkillNode[] = [
     'Can discuss abstract or hypothetical topics',
     'Speculate, evaluate, compare viewpoints — IELTS Speaking Part 3'),
 
+  // ── PTE/OET Can-do — additional nodes not in IELTS chain ────────────
+  // These nodes are referenced by PTE/OET exam definitions and content.
+  nd('cando.b1.read_aloud', 'cando', 'B1', 'speaking',
+    'Can read a text aloud with clear pronunciation',
+    'Natural stress, intonation, smooth delivery — PTE Read Aloud'),
+  nd('cando.b1.reproduce_spoken', 'cando', 'B1', 'speaking',
+    'Can reproduce spoken sentences accurately',
+    'Repeat with correct words, stress, rhythm — PTE Repeat Sentence'),
+  nd('cando.a2.answer_questions', 'cando', 'A2', 'speaking',
+    'Can answer simple factual questions briefly',
+    'One-word or short-phrase responses — PTE Answer Short Question'),
+  nd('cando.b2.summarise_text', 'cando', 'B2', 'writing',
+    'Can summarise a text in one sentence',
+    'Identify main idea, compress to single sentence — PTE Summarize Written'),
+  nd('cando.b2.summarise_spoken', 'cando', 'B2', 'listening',
+    'Can summarise the key points of spoken text',
+    'Listen to lecture, write summary — PTE Summarize Spoken/Retell Lecture'),
+  nd('cando.b2.follow_text_structure', 'cando', 'B2', 'reading',
+    'Can follow the logical structure of a text',
+    'Identify cohesion, topic sentences, reference chains — PTE Reorder'),
+  nd('cando.b1.predict_content', 'cando', 'B1', 'listening',
+    'Can predict content from context',
+    'Use context to anticipate missing information — PTE Select Missing Word'),
+  nd('cando.b1.use_vocabulary', 'cando', 'B1', 'reading',
+    'Can use vocabulary in context',
+    'Select appropriate words for gaps in text — PTE R&W Fill Blanks'),
+
   // ── Lexical — general skill (4 nodes) ───────────────────────────────
   // Vocabulary bands from concrete (A1) to abstract (B2).
   n('lex.a1.everyday_objects', 'lexical', 'A1', 'general', 'Everyday objects'),
@@ -172,6 +199,45 @@ export const SEED_NODES: SkillNode[] = [
   nd('strat.ielts.part3_extend', 'strategy', 'B2', 'speaking',
     'IELTS Speaking Part 3: extending answers',
     'Speculate, exemplify, compare, evaluate'),
+
+  // ── PTE Strategy — various skills (6 nodes) ────────────────────────
+  // PTE-specific exam techniques: integrated scoring, computer-based pacing.
+  nd('strat.pte.time_management', 'strategy', 'B1', 'general',
+    'PTE time management',
+    'Section-level pacing, auto-advance awareness, skipping strategy'),
+  nd('strat.pte.read_aloud', 'strategy', 'B1', 'speaking',
+    'PTE Read Aloud: fluency and pronunciation',
+    'Natural pacing, stress patterns, chunking for meaning'),
+  nd('strat.pte.describe_image', 'strategy', 'B2', 'speaking',
+    'PTE Describe Image: structured description',
+    'Opening statement → key features → trends → conclusion in 40s'),
+  nd('strat.pte.reorder_paragraphs', 'strategy', 'B2', 'reading',
+    'PTE Reorder Paragraphs: cohesion tracking',
+    'Topic sentence first, pronoun reference chains, linking words'),
+  nd('strat.pte.summarize_written', 'strategy', 'B2', 'writing',
+    'PTE Summarize Written Text: one-sentence summary',
+    'Single complex sentence, 5-75 words, main idea + key support'),
+  nd('strat.pte.write_essay', 'strategy', 'B2', 'writing',
+    'PTE Write Essay: 200-300 word argument',
+    'Introduction with position → 2 body paragraphs → conclusion, 20 min'),
+
+  // ── OET Strategy — healthcare skills (5 nodes) ────────────────────
+  // OET-specific techniques for healthcare professionals.
+  nd('strat.oet.letter_structure', 'strategy', 'B2', 'writing',
+    'OET Writing: referral/discharge letter',
+    'Purpose → clinical info → request, formal register, case notes → letter'),
+  nd('strat.oet.roleplay', 'strategy', 'B2', 'speaking',
+    'OET Speaking: role-play consultation',
+    'Opening → information gathering → empathy → plan, 2 min prep + 5 min'),
+  nd('strat.oet.medical_reading', 'strategy', 'B2', 'reading',
+    'OET Reading: expeditious + careful reading',
+    'Part A skimming healthcare texts, Part C detailed comprehension'),
+  nd('strat.oet.clinical_vocab', 'strategy', 'B1', 'general',
+    'OET Clinical vocabulary',
+    'Medical terminology, patient-appropriate language, formal register'),
+  nd('strat.oet.listening_notes', 'strategy', 'B2', 'listening',
+    'OET Listening: consultation note-taking',
+    'Extract key clinical information from patient consultations'),
 
   // ── C1/C2 Grammar (3 nodes) ────────────────────────────────────────
   // # Advanced grammar structures used in formal/academic contexts.
@@ -311,6 +377,31 @@ export const SEED_EDGES: SkillEdge[] = [
   // Time management supports task completion in timed writing sections.
   { fromNodeId: 'strat.ielts.time_management', toNodeId: 'strat.ielts.task1_structure', strength: 0.3 },
   { fromNodeId: 'strat.ielts.time_management', toNodeId: 'strat.ielts.task2_structure', strength: 0.3 },
+
+  // ── PTE/OET Can-do chains (7 edges) ─────────────────────────────
+  // Connect PTE/OET-specific nodes to the existing skill progression.
+  { fromNodeId: 'cando.b1.describe_routine', toNodeId: 'cando.b1.read_aloud', strength: 0.5 },
+  { fromNodeId: 'cando.a1.introduce_self', toNodeId: 'cando.a2.answer_questions', strength: 0.7 },
+  { fromNodeId: 'cando.a2.answer_questions', toNodeId: 'cando.b1.reproduce_spoken', strength: 0.5 },
+  { fromNodeId: 'cando.b1.write_connected_text', toNodeId: 'cando.b2.summarise_text', strength: 0.7 },
+  { fromNodeId: 'cando.b1.understand_monologue', toNodeId: 'cando.b2.summarise_spoken', strength: 0.7 },
+  { fromNodeId: 'cando.b1.understand_factual_text', toNodeId: 'cando.b2.follow_text_structure', strength: 0.7 },
+  { fromNodeId: 'cando.b1.understand_monologue', toNodeId: 'cando.b1.predict_content', strength: 0.5 },
+
+  // ── PTE Strategy prerequisites (4 edges) ────────────────────────
+  // Time management supports all PTE timed tasks.
+  { fromNodeId: 'strat.pte.time_management', toNodeId: 'strat.pte.summarize_written', strength: 0.3 },
+  { fromNodeId: 'strat.pte.time_management', toNodeId: 'strat.pte.write_essay', strength: 0.3 },
+  // Read Aloud feeds Describe Image (both need fluent spoken delivery).
+  { fromNodeId: 'strat.pte.read_aloud', toNodeId: 'strat.pte.describe_image', strength: 0.5 },
+  // Reorder Paragraphs supports Summarize Written (both need text structure analysis).
+  { fromNodeId: 'strat.pte.reorder_paragraphs', toNodeId: 'strat.pte.summarize_written', strength: 0.3 },
+
+  // ── OET Strategy prerequisites (3 edges) ───────────────────────
+  // Clinical vocabulary is foundational for all OET tasks.
+  { fromNodeId: 'strat.oet.clinical_vocab', toNodeId: 'strat.oet.letter_structure', strength: 0.5 },
+  { fromNodeId: 'strat.oet.clinical_vocab', toNodeId: 'strat.oet.roleplay', strength: 0.5 },
+  { fromNodeId: 'strat.oet.clinical_vocab', toNodeId: 'strat.oet.medical_reading', strength: 0.3 },
 
   // ── C1/C2 Grammar progression (3 edges) ──────────────────────────
   // # Passive voice understanding feeds inversion; conditionals feed cleft

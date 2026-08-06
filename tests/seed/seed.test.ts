@@ -42,12 +42,12 @@ describe('seed data integrity', () => {
   })
 
   // Exact counts from the spec — catches accidental additions or deletions.
-  it('has exactly 54 nodes', () => {
-    expect(SEED_NODES).toHaveLength(54)
+  it('has exactly 73 nodes', () => {
+    expect(SEED_NODES).toHaveLength(73)
   })
 
-  it('has exactly 62 edges', () => {
-    expect(SEED_EDGES).toHaveLength(62)
+  it('has exactly 76 edges', () => {
+    expect(SEED_EDGES).toHaveLength(76)
   })
 
   // Every skill area that has content must appear in the graph.
