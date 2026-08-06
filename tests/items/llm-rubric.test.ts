@@ -9,6 +9,7 @@ import type { McqItem } from '@/items/types'
 // Fixture: a B1 present-perfect item used across all rubric tests.
 const ITEM: McqItem = {
   id: 'rubric.test',
+  type: 'mcq',
   stem: 'I ______ my keys. I cannot open the door.',
   options: [
     { text: 'have lost', misconception: null },

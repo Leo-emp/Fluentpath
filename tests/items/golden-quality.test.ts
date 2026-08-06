@@ -39,6 +39,7 @@ function createGeminiProvider(apiKey: string): GenerationProvider {
 function mcq(overrides: Partial<McqItem> & { stem: string }): McqItem {
   return {
     id: 'golden.quality',
+    type: 'mcq' as const,
     level: 'B1',
     nodeIds: ['gram.b1.pp_vs_past_simple'],
     correctIndex: 0,

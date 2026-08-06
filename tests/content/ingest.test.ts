@@ -36,6 +36,7 @@ beforeEach(async () => {
 // A good McqItem that passes all deterministic gates.
 const GOOD_ITEM: McqItem = {
   id: 'item.gen.1',
+  type: 'mcq',
   stem: 'I ______ my keys. I cannot open the door.',
   options: [
     { text: 'have lost', misconception: null },

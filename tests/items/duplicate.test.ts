@@ -5,6 +5,7 @@ import type { McqItem } from '@/items/types'
 function mcq(stem: string): McqItem {
   return {
     id: 'test.dup',
+    type: 'mcq' as const,
     stem,
     options: [
       { text: 'have lost', misconception: null },

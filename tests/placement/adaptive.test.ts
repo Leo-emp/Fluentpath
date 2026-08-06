@@ -19,6 +19,7 @@ function buildItemPool(): McqItem[] {
     for (let i = 0; i < 3; i++) {
       items.push({
         id: `${level.toLowerCase()}_${i}`,
+        type: 'mcq',
         stem: `Question ${i} at ${level}`,
         options: [
           { text: 'correct', misconception: null },

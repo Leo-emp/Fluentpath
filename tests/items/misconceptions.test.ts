@@ -8,6 +8,7 @@ function item(
 ): McqItem {
   return {
     id: 'test',
+    type: 'mcq' as const,
     stem: 'I ______ my keys.',
     options: options.map(([text, misconception]) => ({ text, misconception })),
     correctIndex,

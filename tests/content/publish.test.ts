@@ -151,21 +151,21 @@ describe('the quality gate at publication', () => {
 })
 
 describe('item types without gates', () => {
-  // The schema allows gap_fill, writing_task and speaking_prompt, but only
-  // MCQ has checks written. Coercing another type into the MCQ shape would
-  // reject it for "needing three options" rather than for the real reason.
+  // # All 7 standard types (mcq, gap_fill, reading_passage, writing_task,
+  // # speaking_prompt, reorder, highlight_incorrect) now have quality gates.
+  // # An unknown type should still be rejected as unsupported.
 
-  it('refuses to publish a type it cannot check', async () => {
+  it('refuses to publish a truly unknown type', async () => {
     await recordProvenance(db, { id: 'prov.x', sourceName: 'original', licence: 'original' }, NOW)
     const versionId = await createItem(
       db,
       {
-        id: 'item.gap',
-        type: 'gap_fill',
+        id: 'item.unknown',
+        type: 'mystery_format',
         level: 'B1',
         skill: 'general',
         nodeIds: [],
-        payload: { stem: 'I ______ my keys.', answer: 'lost' },
+        payload: { data: 'some data' },
         provenanceId: 'prov.x',
       },
       NOW,
@@ -181,40 +181,43 @@ describe('item types without gates', () => {
     const versionId = await createItem(
       db,
       {
-        id: 'item.write',
-        type: 'writing_task',
+        id: 'item.unknown2',
+        type: 'mystery_format',
         level: 'B2',
         skill: 'writing',
         nodeIds: [],
-        payload: { prompt: 'Describe a place you know well.' },
+        payload: { data: 'some data' },
         provenanceId: 'prov.y',
       },
       NOW,
     )
 
     const error = await publishItemVersion(db, versionId, inventory, NOW).catch((e) => e)
-    expect(error.message).toContain('writing_task')
+    expect(error.message).toContain('mystery_format')
     expect(error.message).toContain('mcq')
   })
 
-  it('leaves the unsupported item unpublished', async () => {
+  it('rejects incomplete items of supported types via quality gates', async () => {
+    // # gap_fill with no gaps array should fail the quality gate.
     await recordProvenance(db, { id: 'prov.z', sourceName: 'original', licence: 'original' }, NOW)
     const versionId = await createItem(
       db,
       {
-        id: 'item.speak',
-        type: 'speaking_prompt',
+        id: 'item.badgap',
+        type: 'gap_fill',
         level: 'B1',
-        skill: 'speaking',
+        skill: 'general',
         nodeIds: [],
-        payload: { prompt: 'Talk about your last holiday.' },
+        payload: { stem: 'I ______ my keys.', gaps: [] },
         provenanceId: 'prov.z',
       },
       NOW,
     )
 
-    await publishItemVersion(db, versionId, inventory, NOW).catch(() => {})
-    expect((await getItem(db, 'item.speak'))?.status).toBe('draft')
+    await expect(publishItemVersion(db, versionId, inventory, NOW)).rejects.toThrow(
+      PublishRejectedError,
+    )
+    expect((await getItem(db, 'item.badgap'))?.status).toBe('draft')
   })
 })
 

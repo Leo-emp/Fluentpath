@@ -15,6 +15,7 @@ const inventory = buildProfilerInventory()
 
 const QUESTION_ONE: McqItem = {
   id: 'sample-1',
+  type: 'mcq',
   stem: 'I ______ my keys. I cannot open the door.',
   options: [
     { text: 'lost', misconception: null },
@@ -29,6 +30,7 @@ const QUESTION_ONE: McqItem = {
 
 const QUESTION_TWO: McqItem = {
   id: 'sample-2',
+  type: 'mcq',
   stem: 'We ______ to Japan in 2018.',
   options: [
     { text: 'went', misconception: null },

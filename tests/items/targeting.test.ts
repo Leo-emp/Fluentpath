@@ -5,6 +5,7 @@ import type { McqItem } from '@/items/types'
 function mcq(overrides: Partial<McqItem> = {}): McqItem {
   return {
     id: 'test.target',
+    type: 'mcq' as const,
     stem: 'I ______ my keys.',
     options: [
       { text: 'have lost', misconception: null },

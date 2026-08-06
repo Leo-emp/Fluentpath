@@ -44,6 +44,7 @@ export interface GenerateItemResult {
 function toMcqItem(parsed: GeneratedMcq, id: string, level: CefrLevel): McqItem {
   return {
     id,
+    type: 'mcq',
     stem: parsed.stem,
     options: parsed.options,
     correctIndex: parsed.correctIndex,

@@ -9,6 +9,7 @@ const inventory = buildProfilerInventory()
 function mcq(overrides: Partial<McqItem> & { stem: string }): McqItem {
   return {
     id: 'golden.test',
+    type: 'mcq' as const,
     level: 'B1',
     nodeIds: ['gram.b1.pp_vs_past_simple'],
     correctIndex: 0,

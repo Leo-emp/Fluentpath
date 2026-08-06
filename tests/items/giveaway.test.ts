@@ -5,6 +5,7 @@ import type { McqItem } from '@/items/types'
 function item(stem: string, nodeIds = ['gram.b1.pp_vs_past_simple']): McqItem {
   return {
     id: 'test',
+    type: 'mcq' as const,
     stem,
     options: [
       { text: 'went', misconception: null },

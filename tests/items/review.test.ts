@@ -8,6 +8,7 @@ const inventory = buildProfilerInventory()
 function item(over: Partial<McqItem> = {}): McqItem {
   return {
     id: 'test',
+    type: 'mcq' as const,
     stem: 'I ______ my keys. I cannot open the door.',
     options: [
       { text: 'have lost', misconception: null },

@@ -8,26 +8,40 @@ import { checkShape } from './shape'
 import { checkAnswerKey } from './answer-key'
 import { checkTargeting } from './targeting'
 import { checkDuplicate } from './duplicate'
-import type { ItemIssue, ItemReview, McqItem } from './types'
+import { reviewGapFill } from './review-gap-fill'
+import { reviewReadingPassage } from './review-reading'
+import { reviewWritingTask } from './review-writing'
+import { reviewSpeakingPrompt } from './review-speaking'
+import { reviewReorder } from './review-reorder'
+import { reviewHighlightIncorrect } from './review-highlight'
+import { reviewSentenceTransform } from './review-sentence-transform'
+import { reviewErrorCorrection } from './review-error-correction'
+import { reviewWordFormation } from './review-word-formation'
+import { reviewMatching } from './review-matching'
+import { reviewDialogueCompletion } from './review-dialogue'
+import type {
+  ItemIssue, ItemReview, McqItem, ContentItem,
+  GapFillItem, ReadingPassageItem, WritingTaskItem,
+  SpeakingPromptItem, ReorderItem, HighlightIncorrectItem,
+  SentenceTransformItem, ErrorCorrectionItem, WordFormationItem,
+  MatchingItem, DialogueCompletionItem,
+} from './types'
 
-// Context needed by the review pipeline. The inventory is always
-// required; other fields enable optional gates.
+// # Context needed by the review pipeline. The inventory is always
+// # required; other fields enable optional gates.
 export interface ReviewContext {
   inventory: ProfilerInventory
-  // Stems of items already in the bank. When provided, the duplicate
-  // gate compares the candidate against them. When omitted (e.g. in
-  // unit tests that don't need dedup), the gate is skipped.
+  // # Stems of items already in the bank. When provided, the duplicate
+  // # gate compares the candidate against them.
   existingStems?: string[]
 }
 
-// Run every gate over one item.
-//
-// The gates are deliberately separate and each was built from a real
-// failure rather than from imagining what might go wrong. An item passes
-// only when nothing rejects it; warnings are surfaced but do not block.
+// # ─── MCQ Review (existing) ────────────────────────────────────────────
+
+// # Run every gate over one MCQ item.
 export function reviewItem(item: McqItem, context: ReviewContext): ItemReview {
   const issues: ItemIssue[] = [
-    // Cheapest gates first, all run regardless — an item collects every issue.
+    // # Cheapest gates first, all run regardless — an item collects every issue.
     ...checkShape(item),
     ...checkWellFormed(item),
     ...checkMisconceptions(item),
@@ -35,7 +49,7 @@ export function reviewItem(item: McqItem, context: ReviewContext): ItemReview {
     ...checkAnswerKey(item),
     ...checkTargeting(item),
     ...checkLevel(item, context.inventory),
-    // Duplicate gate only runs when a bank is provided.
+    // # Duplicate gate only runs when a bank is provided.
     ...(context.existingStems ? checkDuplicate(item, context.existingStems) : []),
   ]
 
@@ -45,7 +59,64 @@ export function reviewItem(item: McqItem, context: ReviewContext): ItemReview {
   }
 }
 
-// Reject an item whose own language sits above the level it targets.
+// # ─── Generic Review Dispatcher ────────────────────────────────────────
+// # Routes any ContentItem to its type-specific reviewer. This is the single
+// # entry point for publish gates — every new item type gets reviewed here.
+
+export function reviewContentItem(item: ContentItem, context: ReviewContext): ItemReview {
+  let issues: ItemIssue[] = []
+
+  switch (item.type) {
+    case 'mcq':
+      return reviewItem(item as McqItem, context)
+    case 'gap_fill':
+      issues = reviewGapFill(item as GapFillItem)
+      break
+    case 'reading_passage':
+      issues = reviewReadingPassage(item as ReadingPassageItem)
+      break
+    case 'writing_task':
+      issues = reviewWritingTask(item as WritingTaskItem)
+      break
+    case 'speaking_prompt':
+      issues = reviewSpeakingPrompt(item as SpeakingPromptItem)
+      break
+    case 'reorder':
+      issues = reviewReorder(item as ReorderItem)
+      break
+    case 'highlight_incorrect':
+      issues = reviewHighlightIncorrect(item as HighlightIncorrectItem)
+      break
+    case 'sentence_transform':
+      issues = reviewSentenceTransform(item as SentenceTransformItem)
+      break
+    case 'error_correction':
+      issues = reviewErrorCorrection(item as ErrorCorrectionItem)
+      break
+    case 'word_formation':
+      issues = reviewWordFormation(item as WordFormationItem)
+      break
+    case 'matching':
+      issues = reviewMatching(item as MatchingItem)
+      break
+    case 'dialogue_completion':
+      issues = reviewDialogueCompletion(item as DialogueCompletionItem)
+      break
+    default:
+      issues.push({
+        code: 'STRUCTURE',
+        severity: 'reject',
+        message: `Unknown item type: ${(item as ContentItem).type}`,
+      })
+  }
+
+  return {
+    passed: !issues.some((i) => i.severity === 'reject'),
+    issues,
+  }
+}
+
+// # Reject an item whose own language sits above the level it targets.
 function checkLevel(item: McqItem, inventory: ProfilerInventory): ItemIssue[] {
   const issues: ItemIssue[] = []
 

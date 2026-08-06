@@ -5,6 +5,7 @@ import type { McqItem } from '@/items/types'
 function item(optionTexts: string[]): McqItem {
   return {
     id: 'test',
+    type: 'mcq' as const,
     stem: 'I ______ my keys.',
     options: optionTexts.map((text, i) => ({
       text,

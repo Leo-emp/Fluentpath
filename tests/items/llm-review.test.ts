@@ -7,6 +7,7 @@ import type { LlmRubricResponse } from '@/items/llm-rubric'
 // Fixture: a B1 present-perfect item.
 const ITEM: McqItem = {
   id: 'llm-review.test',
+  type: 'mcq',
   stem: 'I ______ my keys. I cannot open the door.',
   options: [
     { text: 'have lost', misconception: null },
