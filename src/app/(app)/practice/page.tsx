@@ -1,12 +1,12 @@
 'use client'
 
-// # Practice session — assembles items → presents questions → shows summary.
+// # Practice session — assembles items of ALL types → presents them → shows summary.
 // # Immediate correct/incorrect feedback on each answer.
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { SessionShell } from '@/components/session-shell'
-import { McqCard } from '@/components/mcq-card'
+import { ItemCard, type PracticeItem } from '@/components/items/item-card'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { NavBar } from '@/components/nav-bar'
 import { apiFetch } from '@/lib/api'
@@ -14,17 +14,8 @@ import { Button } from '@/components/ui/button'
 
 // # Types matching the practice API responses.
 
-interface McqItem {
-  id: string
-  stem: string
-  options: { text: string; misconception: string | null }[]
-  correctIndex: number
-  nodeIds: string[]
-  difficulty?: number | null
-}
-
 interface SessionItem {
-  item: McqItem
+  item: PracticeItem
   nodeId: string
   reason: 'review' | 'new' | 'remediation'
 }
@@ -57,7 +48,6 @@ export default function PracticePage() {
         )
 
         if (plan.items.length === 0) {
-          // # No items available — nothing to practice.
           router.replace('/dashboard')
           return
         }
@@ -69,7 +59,12 @@ export default function PracticePage() {
         )
 
         setSessionId(session.sessionId)
-        setItems(plan.items)
+        // # Normalize items — API may return ContentItem shape or raw payload.
+        const normalized: SessionItem[] = plan.items.map((si) => ({
+          ...si,
+          item: normalizeItem(si.item as unknown as Record<string, unknown>),
+        }))
+        setItems(normalized)
         setPhase('active')
       } catch {
         router.replace('/dashboard')
@@ -78,13 +73,12 @@ export default function PracticePage() {
     init()
   }, [router])
 
-  // # Handle answer selection — records outcome and advances.
-  const handleAnswer = useCallback(
-    async (selectedIndex: number) => {
+  // # Handle answer completion — records outcome and advances.
+  const handleComplete = useCallback(
+    async (correct: boolean) => {
       const sessionItem = items[currentIndex]
       if (!sessionItem) return
 
-      const correct = selectedIndex === sessionItem.item.correctIndex
       if (correct) setCorrectCount((c) => c + 1)
 
       const outcome: Outcome = {
@@ -157,13 +151,32 @@ export default function PracticePage() {
       total={items.length}
       onQuit={handleQuit}
     >
-      <McqCard
-        stem={sessionItem.item.stem}
-        options={sessionItem.item.options}
-        correctIndex={sessionItem.item.correctIndex}
+      <ItemCard
+        item={sessionItem.item}
         showFeedback={true}
-        onSelect={handleAnswer}
+        onComplete={handleComplete}
       />
     </SessionShell>
   )
+}
+
+// # Normalize an item from the API into the PracticeItem shape.
+// # The assembler returns ContentItem objects where the payload fields
+// # are spread across the top level. We need to collect them into a payload.
+function normalizeItem(raw: Record<string, unknown>): PracticeItem {
+  const type = String(raw.type ?? 'mcq')
+  const id = String(raw.id ?? '')
+  const nodeIds = Array.isArray(raw.nodeIds) ? raw.nodeIds as string[] : []
+  const difficulty = typeof raw.difficulty === 'number' ? raw.difficulty : null
+
+  // # Everything except id/type/nodeIds/difficulty/level is payload.
+  const exclude = new Set(['id', 'type', 'nodeIds', 'difficulty', 'level'])
+  const payload: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (!exclude.has(key)) {
+      payload[key] = value
+    }
+  }
+
+  return { id, type, payload, nodeIds, difficulty }
 }

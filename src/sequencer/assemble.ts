@@ -1,9 +1,9 @@
 import type { Db } from '@/db/client'
 import type { ActionPlan } from '@/diagnosis/types'
-import type { McqItem } from '@/items/types'
+import type { ContentItem } from '@/items/types'
 import { listMastery } from '@/mastery/repository'
 import { listEdges, listNodes } from '@/skill-graph/repository'
-import { findItemsByNodes } from '@/content/item-bank'
+import { findItemsByNodes, findAllItemsByNodes } from '@/content/item-bank'
 import { selectNext, type Candidate } from './select'
 import { boostFromDiagnosis } from './diagnosis-bridge'
 
@@ -23,8 +23,8 @@ export interface AssembleOptions {
 }
 
 export interface SessionItem {
-  // The MCQ item to present.
-  item: McqItem
+  // The content item to present (any of the 12 types).
+  item: ContentItem
   // The primary node this item targets.
   nodeId: string
   // Why this node was selected.
@@ -99,19 +99,30 @@ export async function assembleSession(
   }
 
   // Step 4: fetch items from the item bank for the selected nodes.
+  // # Try all item types first, fall back to MCQ-only for backward compat.
   const candidateNodeIds = candidates.map((c) => c.node.id)
-  const bankItems = await findItemsByNodes(db, candidateNodeIds, {
+  const bankItems = await findAllItemsByNodes(db, candidateNodeIds, {
     excludeIds: options.excludeItemIds,
-    limit: maxItems * 2,
+    limit: maxItems * 3,
   })
 
+  // # Fall back to MCQ-only if the multi-type query returned nothing
+  // # (e.g. older databases with only MCQ items).
   if (bankItems.length === 0) {
-    return { items: [], nodeIds: [], estimatedMinutes: 0 }
+    const mcqItems = await findItemsByNodes(db, candidateNodeIds, {
+      excludeIds: options.excludeItemIds,
+      limit: maxItems * 2,
+    })
+    if (mcqItems.length === 0) {
+      return { items: [], nodeIds: [], estimatedMinutes: 0 }
+    }
+    // # Use MCQ items as ContentItem (they satisfy the union).
+    bankItems.push(...mcqItems)
   }
 
   // Step 5: allocate items per node.
   // Group items by their primary node (first nodeId).
-  const itemsByNode = new Map<string, McqItem[]>()
+  const itemsByNode = new Map<string, ContentItem[]>()
   for (const item of bankItems) {
     const nodeId = item.nodeIds[0]
     if (!nodeId) continue
@@ -138,9 +149,9 @@ export async function assembleSession(
     // Sort by difficulty ascending within each node: easiest first.
     // Items without a difficulty value go to the end (neutral ordering).
     nodeItems.sort((a, b) => {
-      const da = a.difficulty ?? 1
-      const db = b.difficulty ?? 1
-      return da - db
+      const diffA = a.difficulty ?? 1
+      const diffB = b.difficulty ?? 1
+      return diffA - diffB
     })
     const selected = nodeItems.slice(0, perNode)
     for (const item of selected) {

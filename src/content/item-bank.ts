@@ -206,6 +206,35 @@ export async function findItemsByNodes(
   })
 }
 
+// # Find published items of ALL types targeting any of the given nodes.
+// # Returns generic content items with type + payload for the practice UI.
+export async function findAllItemsByNodes(
+  db: Db,
+  nodeIds: string[],
+  opts?: ItemBankOptions,
+): Promise<ContentItem[]> {
+  // # Query each item type and merge results.
+  const allItems: ContentItem[] = []
+  const types = ['mcq', 'gap_fill', 'reading_passage', 'writing_task', 'speaking_prompt',
+    'reorder', 'highlight_incorrect', 'sentence_transform', 'error_correction',
+    'word_formation', 'matching', 'dialogue_completion']
+
+  for (const type of types) {
+    const items = await queryContentItems(db, {
+      type,
+      nodeIds,
+      excludeIds: opts?.excludeIds,
+    })
+    allItems.push(...items)
+  }
+
+  // # Apply limit after merging all types.
+  if (opts?.limit && allItems.length > opts.limit) {
+    return allItems.slice(0, opts.limit)
+  }
+  return allItems
+}
+
 // # Find published MCQ items at a specific CEFR level.
 // # Used by placement to pull items at each level for the adaptive algorithm.
 export async function findItemsByLevel(
