@@ -68,7 +68,7 @@ beforeEach(async () => {
   // Insert a learner row so FKs on learner_mastery and practice_sessions are satisfied.
   await db.insert(learners).values({ id: 'learner.1', email: 'learner1@test.com', createdAt: NOW, updatedAt: NOW })
   await upsertNodes(db, NODES, NOW)
-  await upsertEdges(db, EDGES, NOW)
+  await upsertEdges(db, EDGES)
   await recordProvenance(db, { id: 'prov.1', sourceName: 'original', licence: 'original' }, NOW)
 })
 

@@ -81,6 +81,8 @@ describe('speaking type definitions', () => {
         lowConfidenceWords: [
           { word: 'specifically', confidence: 0.45, startMs: 2000, endMs: 2800 },
         ],
+        phonemeAccuracy: null,
+        mispronounced: [],
       },
     }
     expect(features.fluency.speechRateWpm).toBe(120)

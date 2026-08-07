@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null })
   }
 
-  render() {
+  override render() {
     // # If a child threw, show a friendly error card instead of a blank screen.
     if (this.state.hasError) {
       return (

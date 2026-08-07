@@ -74,7 +74,7 @@ export function PricingCards() {
 // # Opens Paddle checkout overlay for the selected plan.
 // # Paddle.js must be loaded (script tag in root layout) and PADDLE_CLIENT_TOKEN set.
 function handleCheckout(planId: string) {
-  const paddleInstance = (window as Record<string, unknown>).Paddle as
+  const paddleInstance = (window as unknown as Record<string, unknown>).Paddle as
     | { Checkout?: { open?: (opts: Record<string, unknown>) => void } }
     | undefined
 

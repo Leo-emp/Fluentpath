@@ -100,6 +100,7 @@ describe('diagnosis types', () => {
       gaps: [],
       actionPlan: { steps: [], totalEstimatedMinutes: 0, gapCount: 0 },
       bandImpacts: [],
+      confusablePairs: [],
     }
     expect(JSON.parse(JSON.stringify(diagnosis))).toEqual(diagnosis)
   })

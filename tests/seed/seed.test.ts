@@ -180,6 +180,8 @@ describe('end to end on the seeded graph', () => {
       },
       itemsUsed: 20,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
 
     const mastery = populateMastery(placementResult, nodes, NOW)

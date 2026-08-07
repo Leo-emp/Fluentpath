@@ -50,6 +50,8 @@ function featuresFixture(): SpeechFeatures {
       lowConfidenceWords: [
         { word: 'restaurants', confidence: 0.45, startMs: 3000, endMs: 3500 },
       ],
+      phonemeAccuracy: null,
+      mispronounced: [],
     },
   }
 }

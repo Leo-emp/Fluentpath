@@ -25,6 +25,8 @@ describe('populateMastery', () => {
       },
       itemsUsed: 12,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const nodes = buildNodes()
     const now = 1_000_000
@@ -48,6 +50,8 @@ describe('populateMastery', () => {
       },
       itemsUsed: 6,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const nodes = buildNodes()
     const records = populateMastery(result, nodes, 1_000_000)
@@ -67,6 +71,8 @@ describe('populateMastery', () => {
       },
       itemsUsed: 6,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const nodes = buildNodes()
     const records = populateMastery(result, nodes, 1_000_000)
@@ -84,6 +90,8 @@ describe('populateMastery', () => {
       },
       itemsUsed: 3,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const nodes = buildNodes()
     const records = populateMastery(result, nodes, 1_000_000)
@@ -103,6 +111,8 @@ describe('populateMastery', () => {
       levelResults: {},
       itemsUsed: 0,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const nodes = buildNodes()
     const records = populateMastery(result, nodes, 1_000_000)
@@ -115,6 +125,8 @@ describe('populateMastery', () => {
       levelResults: {},
       itemsUsed: 0,
       answeredItemIds: [],
+      confidence: 'moderate',
+      perSkillLevels: {},
     }
     const now = 999_999
     const records = populateMastery(result, buildNodes(), now)

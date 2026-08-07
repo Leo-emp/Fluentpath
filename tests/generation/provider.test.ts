@@ -76,6 +76,6 @@ describe('parseModelOutput', () => {
     const bloated = { ...VALID, temperature: 0.7, model: 'gemini-2.5-flash' }
     const result = parseModelOutput(JSON.stringify(bloated))
     expect(result).toEqual(VALID)
-    expect((result as Record<string, unknown>)['temperature']).toBeUndefined()
+    expect((result as unknown as Record<string, unknown>)['temperature']).toBeUndefined()
   })
 })

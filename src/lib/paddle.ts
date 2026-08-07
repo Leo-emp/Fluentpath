@@ -124,7 +124,9 @@ export function parseWebhookPayload(
 
   // # Extract price ID from items array.
   const items = data.items as Array<Record<string, unknown>> | undefined
-  const priceId = items?.[0]?.price?.id as string | null ?? null
+  const firstItem = items?.[0] as Record<string, unknown> | undefined
+  const price = firstItem?.price as Record<string, unknown> | undefined
+  const priceId = (price?.id as string | null) ?? null
 
   return {
     eventType,
