@@ -116,6 +116,30 @@ function VocabCard({ entry }: { entry: VocabEntry }) {
               &ldquo;{entry.example}&rdquo;
             </p>
             <p><strong>Explanation:</strong> {entry.explanation}</p>
+
+            {/* # More examples — if the entry has them */}
+            {entry.moreExamples && entry.moreExamples.length > 0 && (
+              <div>
+                <p className="font-medium">More examples:</p>
+                <ul className="ml-4 mt-1 list-disc space-y-1 text-muted-foreground">
+                  {entry.moreExamples.map((ex, i) => (
+                    <li key={i} className="italic">{ex}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* # Common mistakes — if the entry has them */}
+            {entry.commonMistakes && entry.commonMistakes.length > 0 && (
+              <div>
+                <p className="font-medium text-red-600 dark:text-red-400">Common mistakes:</p>
+                <ul className="ml-4 mt-1 list-disc space-y-1">
+                  {entry.commonMistakes.map((mistake, i) => (
+                    <li key={i}>{mistake}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -5,11 +5,46 @@
 // # then patterns are shown with structure, meaning, examples, and
 // # common mistakes. Each pattern expands for full detail.
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { NavBar } from '@/components/nav-bar'
 import { Card, CardContent } from '@/components/ui/card'
 import { GRAMMAR_CATEGORIES } from '@/lib/reference/grammar-data'
-import type { GrammarPattern } from '@/lib/reference/types'
+import { GRAMMAR_CATEGORIES_2 } from '@/lib/reference/grammar-data-2'
+import { GRAMMAR_CATEGORIES_3 } from '@/lib/reference/grammar-data-3'
+import { GRAMMAR_CATEGORIES_4 } from '@/lib/reference/grammar-data-4'
+import { GRAMMAR_CATEGORIES_5 } from '@/lib/reference/grammar-data-5'
+import type { GrammarCategory, GrammarPattern } from '@/lib/reference/types'
+
+// # Merge grammar categories from multiple data files.
+// # Categories with matching IDs get their patterns combined.
+// # New categories (unique IDs) are appended to the list.
+function mergeGrammarCategories(...sources: GrammarCategory[][]): GrammarCategory[] {
+  const merged = new Map<string, GrammarCategory>()
+
+  for (const source of sources) {
+    for (const cat of source) {
+      const existing = merged.get(cat.id)
+      if (existing) {
+        // # Same ID — append patterns from expansion file to existing category.
+        existing.patterns = [...existing.patterns, ...cat.patterns]
+      } else {
+        // # New category — add with a copy of the patterns array.
+        merged.set(cat.id, { ...cat, patterns: [...cat.patterns] })
+      }
+    }
+  }
+
+  return Array.from(merged.values())
+}
+
+// # Combine all grammar data files into one merged list.
+const ALL_GRAMMAR_CATEGORIES = mergeGrammarCategories(
+  GRAMMAR_CATEGORIES,
+  GRAMMAR_CATEGORIES_2,
+  GRAMMAR_CATEGORIES_3,
+  GRAMMAR_CATEGORIES_4,
+  GRAMMAR_CATEGORIES_5,
+)
 
 // # Colour badges for CEFR levels.
 const LEVEL_COLOURS: Record<string, string> = {
@@ -94,8 +129,8 @@ function PatternCard({ pattern }: { pattern: GrammarPattern }) {
 }
 
 export default function GrammarPage() {
-  const [selectedCategoryId, setSelectedCategoryId] = useState(GRAMMAR_CATEGORIES[0]?.id ?? '')
-  const selectedCategory = GRAMMAR_CATEGORIES.find(c => c.id === selectedCategoryId)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(ALL_GRAMMAR_CATEGORIES[0]?.id ?? '')
+  const selectedCategory = ALL_GRAMMAR_CATEGORIES.find(c => c.id === selectedCategoryId)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -119,7 +154,7 @@ export default function GrammarPage() {
             onChange={e => setSelectedCategoryId(e.target.value)}
             className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary sm:w-80"
           >
-            {GRAMMAR_CATEGORIES.map(cat => (
+            {ALL_GRAMMAR_CATEGORIES.map(cat => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>

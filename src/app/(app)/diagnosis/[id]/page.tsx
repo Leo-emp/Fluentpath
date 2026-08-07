@@ -121,7 +121,7 @@ export default function DiagnosisPage({
           </section>
         )}
 
-        {/* # Action Plan — estimated study time */}
+        {/* # Action Plan — estimated study time + prioritised steps */}
         {plan && (
           <section className="mb-10">
             <h2 className="mb-4 font-serif text-xl font-bold">Action Plan</h2>
@@ -130,6 +130,31 @@ export default function DiagnosisPage({
                 Estimated study time: {Math.floor(plan.totalEstimatedMinutes / 60)}h{' '}
                 {plan.totalEstimatedMinutes % 60}m
               </p>
+            )}
+            {/* # Prioritised action steps */}
+            {plan.steps && plan.steps.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {plan.steps
+                  .slice()
+                  .sort((a, b) => a.priority - b.priority)
+                  .map((step, i) => (
+                    <Card key={i} className="border border-border p-4">
+                      <div className="flex items-center gap-3">
+                        {/* # Priority badge */}
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                          step.priority === 1
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            : step.priority === 2
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                        }`}>
+                          {i + 1}
+                        </span>
+                        <span className="text-sm font-medium">{step.title}</span>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
             )}
           </section>
         )}

@@ -1,58 +1,346 @@
 'use client'
 
-// # Individual lesson page — video player + lesson notes.
-// # Video URL will come from database or blob storage in production.
-// # For now, shows a placeholder with lesson info.
+// # Individual lesson page — renders structured lesson content with
+// # premium visual treatment for each section type:
+// # 'text' = explanatory prose, 'rule' = highlighted rule box,
+// # 'tip' = practical advice callout, 'example' = annotated examples,
+// # 'exercise' = interactive question with reveal-answer button.
+// # Also shows objectives, key takeaways, common mistakes, and related lessons.
 
-import { useParams } from 'next/navigation'
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { NavBar } from '@/components/nav-bar'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { LESSON_CATEGORIES } from '@/lib/reference/lesson-data'
+import { LESSON_CATEGORIES_2 } from '@/lib/reference/lesson-data-2'
+import type { LessonSection, Lesson, LessonCategory } from '@/lib/reference/types'
 
-export default function LessonPage() {
-  const { id } = useParams<{ id: string }>()
+// # Merge all lesson data (same merge logic as the list page).
+function mergeLessonCategories(...sources: LessonCategory[][]): LessonCategory[] {
+  const merged = new Map<string, LessonCategory>()
+  for (const source of sources) {
+    for (const cat of source) {
+      const existing = merged.get(cat.id)
+      if (existing) {
+        existing.lessons = [...existing.lessons, ...cat.lessons]
+      } else {
+        merged.set(cat.id, { ...cat, lessons: [...cat.lessons] })
+      }
+    }
+  }
+  return Array.from(merged.values())
+}
 
+const ALL_LESSON_CATEGORIES = mergeLessonCategories(
+  LESSON_CATEGORIES,
+  LESSON_CATEGORIES_2,
+)
+
+// # Flatten all lessons for ID lookup.
+const ALL_LESSONS = ALL_LESSON_CATEGORIES.flatMap(c => c.lessons)
+
+// # Colour badges for CEFR levels.
+const LEVEL_COLOURS: Record<string, string> = {
+  A1: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  A2: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+  B1: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  B2: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+  C1: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  C2: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+}
+
+// # ─── Section Renderers ───
+
+// # 'text' sections — clean explanatory prose.
+function TextSection({ section }: { section: LessonSection }) {
   return (
-    <>
-      <NavBar />
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        {/* # Video player area — placeholder until videos are uploaded */}
-        <div className="mb-6 aspect-video w-full rounded-lg border border-border bg-muted">
-          <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-            <span className="mb-2 text-4xl">&#9654;</span>
-            <p className="text-sm">Video lesson: {id}</p>
-            <p className="mt-1 text-xs">Video content coming soon</p>
-          </div>
-        </div>
-
-        {/* # Lesson info */}
-        <h1 className="mb-4 font-serif text-2xl font-bold">
-          {formatTitle(id ?? '')}
-        </h1>
-
-        {/* # Quick actions */}
-        <div className="mb-6 flex gap-3">
-          <Button variant="outline" onClick={() => window.history.back()}>
-            Back to Lessons
-          </Button>
-        </div>
-
-        {/* # Lesson notes / transcript area */}
-        <Card className="border border-border p-6">
-          <h2 className="mb-3 font-serif text-lg font-bold">Lesson Notes</h2>
-          <p className="text-sm text-muted-foreground">
-            Key takeaways and practice exercises will appear here alongside the video.
-          </p>
-        </Card>
-      </main>
-    </>
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
+      <p className="leading-relaxed text-foreground/90">{section.content}</p>
+    </div>
   )
 }
 
-// # Convert lesson slug to display title.
-function formatTitle(id: string): string {
-  return id
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+// # 'rule' sections — highlighted box with structured grammar rules.
+function RuleSection({ section }: { section: LessonSection }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-amber-900 dark:text-amber-200">
+          {section.content}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// # 'tip' sections — callout box with practical advice.
+function TipSection({ section }: { section: LessonSection }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
+        <p className="text-sm leading-relaxed text-blue-900 dark:text-blue-200">
+          {section.content}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// # 'example' sections — example sentences + analysis.
+function ExampleSection({ section }: { section: LessonSection }) {
+  return (
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
+      {/* # Example sentences in a styled list */}
+      {section.examples && section.examples.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {section.examples.map((ex, i) => (
+            <div
+              key={i}
+              className="rounded-md border-l-4 border-primary bg-muted/50 px-4 py-2.5"
+            >
+              <p className="text-sm font-medium italic">&ldquo;{ex}&rdquo;</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* # Analysis of the examples */}
+      {section.analysis && (
+        <div className="rounded-lg bg-muted/30 p-4">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {section.analysis}
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// # 'exercise' sections — question with reveal-answer button.
+function ExerciseSection({ section }: { section: LessonSection }) {
+  const [revealed, setRevealed] = useState(false)
+
+  return (
+    <div>
+      <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
+      <div className="rounded-lg border border-border bg-card p-5">
+        {/* # Exercise instruction */}
+        <p className="mb-3 text-sm text-muted-foreground">{section.content}</p>
+
+        {/* # Question */}
+        {section.question && (
+          <p className="mb-4 text-base font-medium">{section.question}</p>
+        )}
+
+        {/* # Reveal answer button */}
+        {!revealed ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRevealed(true)}
+          >
+            Show Answer
+          </Button>
+        ) : (
+          <div className="space-y-3">
+            {/* # Answer */}
+            <div className="rounded-md border-l-4 border-green-500 bg-green-50 px-4 py-3 dark:bg-green-950/30">
+              <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+                {section.answer}
+              </p>
+            </div>
+            {/* # Explanation */}
+            {section.answerExplanation && (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {section.answerExplanation}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// # Route each section to the correct renderer.
+function SectionRenderer({ section }: { section: LessonSection }) {
+  switch (section.type) {
+    case 'rule': return <RuleSection section={section} />
+    case 'tip': return <TipSection section={section} />
+    case 'example': return <ExampleSection section={section} />
+    case 'exercise': return <ExerciseSection section={section} />
+    default: return <TextSection section={section} />
+  }
+}
+
+export default function LessonPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+
+  // # Find the lesson by ID.
+  const lesson = ALL_LESSONS.find(l => l.id === id)
+
+  // # If lesson not found, show a fallback.
+  if (!lesson) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <NavBar />
+        <main className="mx-auto max-w-3xl px-6 py-16 text-center">
+          <h1 className="mb-4 text-2xl font-bold">Lesson Not Found</h1>
+          <p className="mb-6 text-muted-foreground">
+            This lesson does not exist or may have been removed.
+          </p>
+          <Button onClick={() => router.push('/lessons')}>
+            Back to Lessons
+          </Button>
+        </main>
+      </div>
+    )
+  }
+
+  // # Find related lessons for the "up next" section.
+  const relatedLessons = (lesson.relatedLessons ?? [])
+    .map(rid => ALL_LESSONS.find(l => l.id === rid))
+    .filter(Boolean) as Lesson[]
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <NavBar />
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        {/* # Back link */}
+        <button
+          onClick={() => router.push('/lessons')}
+          className="mb-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Back to Lessons
+        </button>
+
+        {/* # ─── Lesson Header ─── */}
+        <header className="mb-8">
+          {/* # Badges row */}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+              lesson.skill === 'grammar' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+              : lesson.skill === 'writing' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+              : lesson.skill === 'speaking' ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+              : lesson.skill === 'reading' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+              : lesson.skill === 'listening' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+              : lesson.skill === 'vocabulary' ? 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
+              : lesson.skill === 'pronunciation' ? 'bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300'
+              : 'bg-gray-50 text-gray-700 dark:bg-gray-800/30 dark:text-gray-300'
+            }`}>
+              {lesson.skill}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLOURS[lesson.level] ?? ''}`}>
+              {lesson.level}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {lesson.duration} min
+            </span>
+          </div>
+
+          {/* # Title and description */}
+          <h1 className="text-3xl font-bold tracking-tight">{lesson.title}</h1>
+          <p className="mt-2 text-muted-foreground leading-relaxed">{lesson.description}</p>
+        </header>
+
+        {/* # ─── Learning Objectives ─── */}
+        <Card className="mb-8 border-primary/20">
+          <CardContent className="pt-5">
+            <h2 className="mb-3 text-base font-semibold">What You Will Learn</h2>
+            <ul className="space-y-2">
+              {lesson.objectives.map((obj, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                    {i + 1}
+                  </span>
+                  <span className="leading-relaxed">{obj}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* # ─── Lesson Sections ─── */}
+        <div className="space-y-8">
+          {lesson.sections.map((section, i) => (
+            <SectionRenderer key={i} section={section} />
+          ))}
+        </div>
+
+        {/* # ─── Key Takeaways ─── */}
+        <Card className="mt-10 border-green-200 dark:border-green-800">
+          <CardContent className="pt-5">
+            <h2 className="mb-3 text-base font-semibold text-green-700 dark:text-green-400">
+              Key Takeaways
+            </h2>
+            <ul className="space-y-2">
+              {lesson.keyTakeaways.map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <span className="mt-0.5 text-green-600 dark:text-green-400">&#10003;</span>
+                  <span className="leading-relaxed">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* # ─── Common Mistakes ─── */}
+        {lesson.commonMistakes && lesson.commonMistakes.length > 0 && (
+          <Card className="mt-6 border-red-200 dark:border-red-800">
+            <CardContent className="pt-5">
+              <h2 className="mb-3 text-base font-semibold text-red-600 dark:text-red-400">
+                Common Mistakes to Avoid
+              </h2>
+              <ul className="space-y-2">
+                {lesson.commonMistakes.map((mistake, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="mt-0.5 text-red-500">&#10007;</span>
+                    <span className="leading-relaxed">{mistake}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* # ─── Related Lessons ─── */}
+        {relatedLessons.length > 0 && (
+          <section className="mt-10">
+            <h2 className="mb-4 text-base font-semibold">Continue Learning</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {relatedLessons.map(related => (
+                <Card
+                  key={related.id}
+                  className="cursor-pointer transition-all hover:ring-2 hover:ring-primary/20"
+                  onClick={() => router.push(`/lessons/${related.id}`)}
+                >
+                  <CardContent className="pt-4 pb-4">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${LEVEL_COLOURS[related.level] ?? ''}`}>
+                        {related.level}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{related.duration} min</span>
+                    </div>
+                    <h3 className="text-sm font-semibold">{related.title}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* # ─── Bottom Navigation ─── */}
+        <div className="mt-10 flex justify-center border-t border-border pt-6">
+          <Button variant="outline" onClick={() => router.push('/lessons')}>
+            ← All Lessons
+          </Button>
+        </div>
+      </main>
+    </div>
+  )
 }

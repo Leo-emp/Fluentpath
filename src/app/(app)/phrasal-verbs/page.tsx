@@ -4,11 +4,40 @@
 // # Dropdown selects a field, then entries are shown with meaning, context,
 // # example, explanation, separability, and formal equivalent.
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { NavBar } from '@/components/nav-bar'
 import { Card, CardContent } from '@/components/ui/card'
 import { PHRASAL_VERB_FIELDS } from '@/lib/reference/phrasal-verbs-data'
-import type { PhrasalVerbEntry } from '@/lib/reference/types'
+import { PHRASAL_VERB_FIELDS_2 } from '@/lib/reference/phrasal-verbs-data-2'
+import type { PhrasalVerbEntry, PhrasalVerbField } from '@/lib/reference/types'
+
+// # Merge phrasal verb fields from multiple data files.
+// # Fields with matching IDs get their entries combined.
+// # New fields (unique IDs) are appended to the list.
+function mergePhrasalVerbFields(...sources: PhrasalVerbField[][]): PhrasalVerbField[] {
+  const merged = new Map<string, PhrasalVerbField>()
+
+  for (const source of sources) {
+    for (const field of source) {
+      const existing = merged.get(field.id)
+      if (existing) {
+        // # Same ID — append entries from expansion file to existing field.
+        existing.entries = [...existing.entries, ...field.entries]
+      } else {
+        // # New field — add with a copy of the entries array.
+        merged.set(field.id, { ...field, entries: [...field.entries] })
+      }
+    }
+  }
+
+  return Array.from(merged.values())
+}
+
+// # Combine all phrasal verb data files into one merged list.
+const ALL_PHRASAL_VERB_FIELDS = mergePhrasalVerbFields(
+  PHRASAL_VERB_FIELDS,
+  PHRASAL_VERB_FIELDS_2,
+)
 
 // # Colour badges for CEFR levels.
 const LEVEL_COLOURS: Record<string, string> = {
@@ -90,8 +119,8 @@ function PhrasalVerbCard({ entry }: { entry: PhrasalVerbEntry }) {
 }
 
 export default function PhrasalVerbsPage() {
-  const [selectedFieldId, setSelectedFieldId] = useState(PHRASAL_VERB_FIELDS[0]?.id ?? '')
-  const selectedField = PHRASAL_VERB_FIELDS.find(f => f.id === selectedFieldId)
+  const [selectedFieldId, setSelectedFieldId] = useState(ALL_PHRASAL_VERB_FIELDS[0]?.id ?? '')
+  const selectedField = ALL_PHRASAL_VERB_FIELDS.find(f => f.id === selectedFieldId)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -116,7 +145,7 @@ export default function PhrasalVerbsPage() {
             onChange={e => setSelectedFieldId(e.target.value)}
             className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary sm:w-80"
           >
-            {PHRASAL_VERB_FIELDS.map(field => (
+            {ALL_PHRASAL_VERB_FIELDS.map(field => (
               <option key={field.id} value={field.id}>
                 {field.icon} {field.name}
               </option>
