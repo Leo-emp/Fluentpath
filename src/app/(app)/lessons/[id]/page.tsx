@@ -7,13 +7,38 @@
 // # 'exercise' = interactive question with reveal-answer button.
 // # Also shows objectives, key takeaways, common mistakes, and related lessons.
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { NavBar } from '@/components/nav-bar'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { apiFetch } from '@/lib/api'
 import { LESSON_CATEGORIES } from '@/lib/reference/lesson-data'
 import { LESSON_CATEGORIES_2 } from '@/lib/reference/lesson-data-2'
+import { LESSON_CATEGORIES_3 } from '@/lib/reference/lesson-data-3'
+import { LESSON_CATEGORIES_4 } from '@/lib/reference/lesson-data-4'
+import { LESSON_CATEGORIES_5 } from '@/lib/reference/lesson-data-5'
+import { LESSON_CATEGORIES_6 } from '@/lib/reference/lesson-data-6'
+import { LESSON_CATEGORIES_7 } from '@/lib/reference/lesson-data-7'
+import { LESSON_CATEGORIES_8 } from '@/lib/reference/lesson-data-8'
+import { LESSON_CATEGORIES_9 } from '@/lib/reference/lesson-data-9'
+import { LESSON_CATEGORIES_10 } from '@/lib/reference/lesson-data-10'
+import { LESSON_CATEGORIES_11 } from '@/lib/reference/lesson-data-11'
+import { LESSON_CATEGORIES_12 } from '@/lib/reference/lesson-data-12'
+import { LESSON_CATEGORIES_13 } from '@/lib/reference/lesson-data-13'
+import { LESSON_CATEGORIES_14 } from '@/lib/reference/lesson-data-14'
+import { LESSON_CATEGORIES_15 } from '@/lib/reference/lesson-data-15'
+import { LESSON_CATEGORIES_16 } from '@/lib/reference/lesson-data-16'
+import { LESSON_CATEGORIES_17 } from '@/lib/reference/lesson-data-17'
+import { LESSON_CATEGORIES_18 } from '@/lib/reference/lesson-data-18'
+import { LESSON_CATEGORIES_19 } from '@/lib/reference/lesson-data-19'
+import { LESSON_CATEGORIES_20 } from '@/lib/reference/lesson-data-20'
+import { LESSON_CATEGORIES_21 } from '@/lib/reference/lesson-data-21'
+import { LESSON_CATEGORIES_22 } from '@/lib/reference/lesson-data-22'
+import { LESSON_CATEGORIES_23 } from '@/lib/reference/lesson-data-23'
+import { LESSON_CATEGORIES_24 } from '@/lib/reference/lesson-data-24'
+import { LESSON_CATEGORIES_25 } from '@/lib/reference/lesson-data-25'
+import { LESSON_CATEGORIES_26 } from '@/lib/reference/lesson-data-26'
 import type { LessonSection, Lesson, LessonCategory } from '@/lib/reference/types'
 
 // # Merge all lesson data (same merge logic as the list page).
@@ -35,6 +60,30 @@ function mergeLessonCategories(...sources: LessonCategory[][]): LessonCategory[]
 const ALL_LESSON_CATEGORIES = mergeLessonCategories(
   LESSON_CATEGORIES,
   LESSON_CATEGORIES_2,
+  LESSON_CATEGORIES_3,
+  LESSON_CATEGORIES_4,
+  LESSON_CATEGORIES_5,
+  LESSON_CATEGORIES_6,
+  LESSON_CATEGORIES_7,
+  LESSON_CATEGORIES_8,
+  LESSON_CATEGORIES_9,
+  LESSON_CATEGORIES_10,
+  LESSON_CATEGORIES_11,
+  LESSON_CATEGORIES_12,
+  LESSON_CATEGORIES_13,
+  LESSON_CATEGORIES_14,
+  LESSON_CATEGORIES_15,
+  LESSON_CATEGORIES_16,
+  LESSON_CATEGORIES_17,
+  LESSON_CATEGORIES_18,
+  LESSON_CATEGORIES_19,
+  LESSON_CATEGORIES_20,
+  LESSON_CATEGORIES_21,
+  LESSON_CATEGORIES_22,
+  LESSON_CATEGORIES_23,
+  LESSON_CATEGORIES_24,
+  LESSON_CATEGORIES_25,
+  LESSON_CATEGORIES_26,
 )
 
 // # Flatten all lessons for ID lookup.
@@ -57,7 +106,7 @@ function TextSection({ section }: { section: LessonSection }) {
   return (
     <div>
       <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
-      <p className="leading-relaxed text-foreground/90">{section.content}</p>
+      <p className="whitespace-pre-line leading-relaxed text-foreground/90">{section.content}</p>
     </div>
   )
 }
@@ -82,7 +131,7 @@ function TipSection({ section }: { section: LessonSection }) {
     <div>
       <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
-        <p className="text-sm leading-relaxed text-blue-900 dark:text-blue-200">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-blue-900 dark:text-blue-200">
           {section.content}
         </p>
       </div>
@@ -128,8 +177,10 @@ function ExerciseSection({ section }: { section: LessonSection }) {
     <div>
       <h3 className="mb-2 text-lg font-semibold">{section.title}</h3>
       <div className="rounded-lg border border-border bg-card p-5">
-        {/* # Exercise instruction */}
-        <p className="mb-3 text-sm text-muted-foreground">{section.content}</p>
+        {/* # Exercise instruction (optional — some skills skip this) */}
+        {section.content && (
+          <p className="mb-3 text-sm text-muted-foreground">{section.content}</p>
+        )}
 
         {/* # Question */}
         {section.question && (
@@ -180,9 +231,55 @@ function SectionRenderer({ section }: { section: LessonSection }) {
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const [isCompleted, setIsCompleted] = useState(false)
+  const [completing, setCompleting] = useState(false)
 
   // # Find the lesson by ID.
   const lesson = ALL_LESSONS.find(l => l.id === id)
+
+  // # Find the next lesson in the same skill + level group.
+  // # Uses lesson metadata (not category IDs) because grammar
+  // # categories use non-standard IDs like 'a1-foundations'.
+  const nextLesson = (() => {
+    if (!lesson) return null
+    const sameSkilllevel = ALL_LESSONS.filter(
+      l => l.level === lesson.level && l.skill === lesson.skill
+    )
+    const idx = sameSkilllevel.findIndex(l => l.id === lesson.id)
+    return idx >= 0 && idx < sameSkilllevel.length - 1 ? sameSkilllevel[idx + 1] : null
+  })()
+
+  // # Check if this lesson is already completed.
+  useEffect(() => {
+    if (!lesson) return
+    apiFetch<{ completions: { lessonId: string }[] }>('/api/lesson-completions')
+      .then(data => {
+        if (data.completions.some(c => c.lessonId === lesson.id)) {
+          setIsCompleted(true)
+        }
+      })
+      .catch(() => {})
+  }, [lesson])
+
+  // # Mark lesson as completed and navigate to next.
+  const handleComplete = useCallback(async () => {
+    if (!lesson || completing) return
+    setCompleting(true)
+    try {
+      await apiFetch('/api/lesson-completions', {
+        method: 'POST',
+        body: JSON.stringify({ lessonId: lesson.id }),
+      })
+      setIsCompleted(true)
+      if (nextLesson) {
+        router.push(`/lessons/${nextLesson.id}`)
+      } else {
+        router.push('/learning-path')
+      }
+    } catch {
+      setCompleting(false)
+    }
+  }, [lesson, nextLesson, completing, router])
 
   // # If lesson not found, show a fallback.
   if (!lesson) {
@@ -335,10 +432,41 @@ export default function LessonPage() {
         )}
 
         {/* # ─── Bottom Navigation ─── */}
-        <div className="mt-10 flex justify-center border-t border-border pt-6">
-          <Button variant="outline" onClick={() => router.push('/lessons')}>
-            ← All Lessons
-          </Button>
+        <div className="mt-10 border-t border-border pt-6">
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <Button variant="outline" onClick={() => router.push('/learning-path')}>
+              ← Learning Path
+            </Button>
+
+            {/* # Complete & Next — primary action */}
+            {!isCompleted ? (
+              <Button
+                size="lg"
+                disabled={completing}
+                onClick={handleComplete}
+              >
+                {completing
+                  ? 'Saving...'
+                  : nextLesson
+                    ? `Complete & Next →`
+                    : 'Complete Lesson ✓'}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                  ✓ Completed
+                </span>
+                {nextLesson && (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/lessons/${nextLesson.id}`)}
+                  >
+                    Next: {nextLesson.title} →
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

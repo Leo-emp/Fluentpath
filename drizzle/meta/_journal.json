@@ -43,6 +43,13 @@
       "when": 1786018430734,
       "tag": "0005_parched_lyja",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786292613591,
+      "tag": "0006_wooden_spiral",
+      "breakpoints": true
     }
   ]
 }

@@ -116,6 +116,17 @@ export default function DashboardPage() {
               <LevelBadge level={learner.currentLevel!} />
             </div>
 
+            {/* # Primary CTA — Learning Path */}
+            <Card
+              className="mb-4 cursor-pointer border-2 border-primary/20 p-6 transition-colors hover:bg-primary/5"
+              onClick={() => router.push('/learning-path')}
+            >
+              <h3 className="mb-1 font-serif text-xl font-bold">Learning Path</h3>
+              <p className="text-sm text-muted-foreground">
+                Your guided curriculum — structured lessons for {learner.currentLevel}
+              </p>
+            </Card>
+
             {/* # Quick action cards — Practice and Mock Test */}
             <div className="mb-10 grid gap-4 sm:grid-cols-2">
               <Card

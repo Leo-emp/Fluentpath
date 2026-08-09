@@ -18,6 +18,23 @@ import { LESSON_CATEGORIES_6 } from '@/lib/reference/lesson-data-6'
 import { LESSON_CATEGORIES_7 } from '@/lib/reference/lesson-data-7'
 import { LESSON_CATEGORIES_8 } from '@/lib/reference/lesson-data-8'
 import { LESSON_CATEGORIES_9 } from '@/lib/reference/lesson-data-9'
+import { LESSON_CATEGORIES_10 } from '@/lib/reference/lesson-data-10'
+import { LESSON_CATEGORIES_11 } from '@/lib/reference/lesson-data-11'
+import { LESSON_CATEGORIES_12 } from '@/lib/reference/lesson-data-12'
+import { LESSON_CATEGORIES_13 } from '@/lib/reference/lesson-data-13'
+import { LESSON_CATEGORIES_14 } from '@/lib/reference/lesson-data-14'
+import { LESSON_CATEGORIES_15 } from '@/lib/reference/lesson-data-15'
+import { LESSON_CATEGORIES_16 } from '@/lib/reference/lesson-data-16'
+import { LESSON_CATEGORIES_17 } from '@/lib/reference/lesson-data-17'
+import { LESSON_CATEGORIES_18 } from '@/lib/reference/lesson-data-18'
+import { LESSON_CATEGORIES_19 } from '@/lib/reference/lesson-data-19'
+import { LESSON_CATEGORIES_20 } from '@/lib/reference/lesson-data-20'
+import { LESSON_CATEGORIES_21 } from '@/lib/reference/lesson-data-21'
+import { LESSON_CATEGORIES_22 } from '@/lib/reference/lesson-data-22'
+import { LESSON_CATEGORIES_23 } from '@/lib/reference/lesson-data-23'
+import { LESSON_CATEGORIES_24 } from '@/lib/reference/lesson-data-24'
+import { LESSON_CATEGORIES_25 } from '@/lib/reference/lesson-data-25'
+import { LESSON_CATEGORIES_26 } from '@/lib/reference/lesson-data-26'
 import type { LessonCategory, Lesson } from '@/lib/reference/types'
 
 // # Merge lesson categories from multiple data files.
@@ -49,6 +66,23 @@ const ALL_LESSON_CATEGORIES = mergeLessonCategories(
   LESSON_CATEGORIES_7,
   LESSON_CATEGORIES_8,
   LESSON_CATEGORIES_9,
+  LESSON_CATEGORIES_10,
+  LESSON_CATEGORIES_11,
+  LESSON_CATEGORIES_12,
+  LESSON_CATEGORIES_13,
+  LESSON_CATEGORIES_14,
+  LESSON_CATEGORIES_15,
+  LESSON_CATEGORIES_16,
+  LESSON_CATEGORIES_17,
+  LESSON_CATEGORIES_18,
+  LESSON_CATEGORIES_19,
+  LESSON_CATEGORIES_20,
+  LESSON_CATEGORIES_21,
+  LESSON_CATEGORIES_22,
+  LESSON_CATEGORIES_23,
+  LESSON_CATEGORIES_24,
+  LESSON_CATEGORIES_25,
+  LESSON_CATEGORIES_26,
 )
 
 // # Colour badges for CEFR levels.

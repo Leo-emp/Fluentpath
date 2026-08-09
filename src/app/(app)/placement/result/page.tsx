@@ -91,7 +91,10 @@ export default function PlacementResultPage() {
 
         {/* # Next-step CTAs */}
         <div className="flex flex-col gap-3">
-          <Button size="lg" onClick={() => router.push('/practice')}>
+          <Button size="lg" onClick={() => router.push('/learning-path')}>
+            Start Your Learning Path
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => router.push('/practice')}>
             Start Practising
           </Button>
           <Button variant="outline" size="lg" onClick={() => router.push('/mock-test')}>

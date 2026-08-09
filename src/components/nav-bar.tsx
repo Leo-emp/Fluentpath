@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 
 // # Navigation links shown to logged-in users.
 const NAV_LINKS = [
+  { href: '/learning-path', label: 'Path' },
   { href: '/lessons', label: 'Lessons' },
   { href: '/vocabulary', label: 'Vocabulary' },
   { href: '/grammar', label: 'Grammar' },
