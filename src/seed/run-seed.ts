@@ -36,6 +36,7 @@ import { SEED_OET_READING_BOOST } from './seed-oet-reading-boost'
 import { SEED_PHRASAL_VERBS } from './seed-phrasal-verbs'
 import { SEED_GRAMMAR_BOOST } from './seed-grammar-boost'
 import { SEED_VOCABULARY_BOOST } from './seed-vocabulary-boost'
+import { SEED_PRACTICE_BOOST } from './seed-practice-boost'
 import { provenance, items, itemVersions, itemNodes } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
@@ -155,6 +156,7 @@ export async function seedGraph(db: Db, now: number): Promise<void> {
     SEED_PHRASAL_VERBS,
     SEED_GRAMMAR_BOOST,
     SEED_VOCABULARY_BOOST,
+    SEED_PRACTICE_BOOST,
   ]
   for (const set of languageBoost) {
     for (const item of set) {

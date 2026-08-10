@@ -40,6 +40,7 @@ import { LESSON_CATEGORIES_28 } from '@/lib/reference/lesson-data-28'
 import { LESSON_CATEGORIES_29 } from '@/lib/reference/lesson-data-29'
 import { LESSON_CATEGORIES_30 } from '@/lib/reference/lesson-data-30'
 import { LESSON_CATEGORIES_31 } from '@/lib/reference/lesson-data-31'
+import { LESSON_CATEGORIES_32 } from '@/lib/reference/lesson-data-32'
 import type { LessonCategory, Lesson } from '@/lib/reference/types'
 
 // # Merge lesson categories from multiple data files.
@@ -93,6 +94,7 @@ const ALL_LESSON_CATEGORIES = mergeLessonCategories(
   LESSON_CATEGORIES_29,
   LESSON_CATEGORIES_30,
   LESSON_CATEGORIES_31,
+  LESSON_CATEGORIES_32,
 )
 
 // # Colour badges for CEFR levels.
