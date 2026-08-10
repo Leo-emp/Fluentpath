@@ -9,6 +9,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import { createClient } from '@libsql/client'
 import * as schema from '@/db/schema'
 import { createLearner, findLearnerByEmail } from '@/db/repositories/learners'
+import { sendWelcomeEmail } from '@/lib/email'
 
 // ─── Database ───────────────────────────────────────────────────────────
 // Better Auth needs its own Drizzle instance with the full schema so the
@@ -95,6 +96,8 @@ export const auth = betterAuth({
               name: user.name ?? undefined,
               now: Date.now(),
             })
+            // # Send welcome email (fire-and-forget — don't block signup).
+            sendWelcomeEmail(user.email, user.name ?? null).catch(() => {})
           }
         },
       },

@@ -62,9 +62,12 @@ export function NavBar() {
 
             {/* # Desktop user menu — hidden on mobile */}
             <div className="hidden items-center gap-3 md:flex">
-              <span className="text-sm text-muted-foreground">
+              <a
+                href="/settings"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
                 {session.user.name ?? session.user.email}
-              </span>
+              </a>
               <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="Sign out">
                 Sign out
               </Button>
@@ -118,9 +121,9 @@ export function NavBar() {
           </div>
           {/* # Mobile user info + sign out */}
           <div className="mt-4 border-t border-border pt-4">
-            <p className="mb-2 text-sm text-muted-foreground">
+            <a href="/settings" onClick={() => setMobileOpen(false)} className="mb-2 block text-sm text-muted-foreground hover:text-foreground">
               {session.user.name ?? session.user.email}
-            </p>
+            </a>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               Sign out
             </Button>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
+import { AnalyticsProvider } from '@/components/analytics-provider'
 import './globals.css'
 
 const inter = Inter({
@@ -32,7 +33,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {children}
+        <AnalyticsProvider>
+          {children}
+        </AnalyticsProvider>
       </body>
     </html>
   )
