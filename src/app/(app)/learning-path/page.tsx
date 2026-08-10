@@ -40,6 +40,11 @@ import { LESSON_CATEGORIES_23 } from '@/lib/reference/lesson-data-23'
 import { LESSON_CATEGORIES_24 } from '@/lib/reference/lesson-data-24'
 import { LESSON_CATEGORIES_25 } from '@/lib/reference/lesson-data-25'
 import { LESSON_CATEGORIES_26 } from '@/lib/reference/lesson-data-26'
+import { LESSON_CATEGORIES_27 } from '@/lib/reference/lesson-data-27'
+import { LESSON_CATEGORIES_28 } from '@/lib/reference/lesson-data-28'
+import { LESSON_CATEGORIES_29 } from '@/lib/reference/lesson-data-29'
+import { LESSON_CATEGORIES_30 } from '@/lib/reference/lesson-data-30'
+import { LESSON_CATEGORIES_31 } from '@/lib/reference/lesson-data-31'
 import type { LessonCategory, Lesson } from '@/lib/reference/types'
 
 // # ═══════════════════════════════════════════════════════════════════
@@ -75,6 +80,11 @@ const ALL_LESSON_CATEGORIES = mergeLessonCategories(
   LESSON_CATEGORIES_24,
   LESSON_CATEGORIES_25,
   LESSON_CATEGORIES_26,
+  LESSON_CATEGORIES_27,
+  LESSON_CATEGORIES_28,
+  LESSON_CATEGORIES_29,
+  LESSON_CATEGORIES_30,
+  LESSON_CATEGORIES_31,
 )
 
 // # CEFR levels in order.
