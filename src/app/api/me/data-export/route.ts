@@ -7,6 +7,7 @@ import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import {
   learners,
   learnerStreaks,
@@ -26,6 +27,11 @@ import { eq } from 'drizzle-orm'
 export async function GET(request: NextRequest) {
   try {
     const { learnerId, email } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 3 exports per hour per user.
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.dataExport)
+    if (limited) return limited
+
     const db = getDb()
 
     // # Fetch all user data in parallel.

@@ -64,22 +64,27 @@ export async function POST(
     if (typeof text !== 'string' || text.trim().length < 2) {
       return jsonError(400, 'Reply must be at least 2 characters')
     }
+    if (typeof text === 'string' && text.length > 5_000) {
+      return jsonError(400, 'Reply must be under 5,000 characters')
+    }
 
     const now = Date.now()
     const replyId = `reply.${now}.${Math.random().toString(36).slice(2, 8)}`
 
-    // # Insert reply and increment reply count.
-    await db.insert(discussionReplies).values({
-      id: replyId,
-      postId: id,
-      authorId: learnerId,
-      body: text.trim(),
-      createdAt: now,
+    // # Insert reply and increment count atomically — prevents miscounts
+    // # from concurrent replies.
+    await db.transaction(async (tx) => {
+      await tx.insert(discussionReplies).values({
+        id: replyId,
+        postId: id,
+        authorId: learnerId,
+        body: text.trim(),
+        createdAt: now,
+      })
+      await tx.update(discussionPosts)
+        .set({ replyCount: sql`${discussionPosts.replyCount} + 1`, updatedAt: now })
+        .where(eq(discussionPosts.id, id))
     })
-
-    await db.update(discussionPosts)
-      .set({ replyCount: sql`${discussionPosts.replyCount} + 1`, updatedAt: now })
-      .where(eq(discussionPosts.id, id))
 
     return jsonOk({ id: replyId }, 201)
   } catch (err) {

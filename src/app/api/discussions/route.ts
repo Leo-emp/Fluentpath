@@ -6,6 +6,7 @@ import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import { discussionPosts, learners } from '@/db/schema'
 import { desc, eq } from 'drizzle-orm'
 
@@ -41,18 +42,35 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 10 posts per 5 minutes per user (spam prevention).
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.discussion)
+    if (limited) return limited
+
     const db = getDb()
     const body = (await request.json()) as Record<string, unknown>
 
     const title = body.title
     const text = body.body
-    const category = typeof body.category === 'string' ? body.category : 'general'
+    const rawCategory = typeof body.category === 'string' ? body.category : 'general'
+
+    // # Allowed discussion categories.
+    const VALID_CATEGORIES = ['general', 'grammar', 'vocabulary', 'ielts', 'pte', 'oet'] as const
+    const category = VALID_CATEGORIES.includes(rawCategory as typeof VALID_CATEGORIES[number])
+      ? rawCategory
+      : 'general'
 
     if (typeof title !== 'string' || title.trim().length < 3) {
       return jsonError(400, 'Title must be at least 3 characters')
     }
+    if (typeof title === 'string' && title.length > 200) {
+      return jsonError(400, 'Title must be under 200 characters')
+    }
     if (typeof text !== 'string' || text.trim().length < 10) {
       return jsonError(400, 'Body must be at least 10 characters')
+    }
+    if (typeof text === 'string' && text.length > 5_000) {
+      return jsonError(400, 'Body must be under 5,000 characters')
     }
 
     const now = Date.now()

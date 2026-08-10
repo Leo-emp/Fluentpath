@@ -7,6 +7,7 @@ import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import { createElevenLabsProvider } from '@/tts/elevenlabs'
 import { getStorageProvider } from '@/storage/provider'
 
@@ -15,7 +16,11 @@ const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedLearner(request)
+    const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 50 TTS requests per hour per user.
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.tts)
+    if (limited) return limited
 
     const apiKey = process.env.ELEVENLABS_API_KEY
     if (!apiKey) {
@@ -27,6 +32,11 @@ export async function POST(request: NextRequest) {
     const text = body.text
     if (typeof text !== 'string' || text.trim().length < 1) {
       return jsonError(400, 'Text is required')
+    }
+    // # Cap TTS text at 5,000 chars — ElevenLabs has its own limits, but
+    // # this prevents sending excessive payloads.
+    if (text.length > 5_000) {
+      return jsonError(400, 'Text must be under 5,000 characters')
     }
 
     // # Optional: voice, speed, accent.

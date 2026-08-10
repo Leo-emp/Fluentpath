@@ -6,11 +6,16 @@ import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import { assessSpeaking } from '@/speaking/assessment'
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedLearner(request)
+    const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 20 AI assessment requests per hour per user.
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.aiFeedback)
+    if (limited) return limited
 
     const body = (await request.json()) as Record<string, unknown>
 
@@ -22,6 +27,10 @@ export async function POST(request: NextRequest) {
 
     if (typeof audioBase64 !== 'string' || audioBase64.length < 100) {
       return jsonError(400, 'Audio data too short')
+    }
+    // # Cap audio at ~7.5 MB base64 (~5.6 MB raw) — prevents oversized payloads.
+    if (audioBase64.length > 10_000_000) {
+      return jsonError(400, 'Audio file too large (max 5 MB)')
     }
     if (typeof mimeType !== 'string') {
       return jsonError(400, 'mimeType is required')

@@ -80,12 +80,12 @@ Return ONLY valid JSON:
   "topActions": ["Action 1", "Action 2", "Action 3"]
 }`
 
-  // # Gemini supports audio input via inline data.
+  // # Gemini supports audio input via inline data. Key in header, never URL.
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [{
           parts: [

@@ -8,6 +8,7 @@ import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 
 // # ─── Request / response types ──────────────────────────────────────────
 
@@ -97,7 +98,11 @@ function parseFeedback(raw: string): ParsedFeedback | null {
 
 export async function POST(request: NextRequest) {
   try {
-    await getAuthenticatedLearner(request)
+    const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 20 AI feedback requests per hour per user.
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.aiFeedback)
+    if (limited) return limited
 
     const apiKey = process.env.GOOGLE_AI_API_KEY
     if (!apiKey) {
@@ -109,18 +114,24 @@ export async function POST(request: NextRequest) {
     if (!body.text || body.text.trim().length < 5) {
       return jsonError(400, 'Please write at least a few words before requesting feedback')
     }
+    if (typeof body.text === 'string' && body.text.length > 10_000) {
+      return jsonError(400, 'Text must be under 10,000 characters')
+    }
     if (!body.prompt) {
       return jsonError(400, 'Exercise prompt is required')
+    }
+    if (typeof body.prompt === 'string' && body.prompt.length > 2_000) {
+      return jsonError(400, 'Prompt must be under 2,000 characters')
     }
 
     const prompt = buildPrompt(body)
 
-    // # Call Gemini API.
+    // # Call Gemini API — key in header, never in URL (avoids log leaks).
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { maxOutputTokens: 2048, temperature: 0.3 },

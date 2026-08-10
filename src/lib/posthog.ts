@@ -1,6 +1,5 @@
-// # PostHog analytics — client-side event tracking.
-// # Initialised once, used throughout the app for funnel analysis,
-// # feature flags, and user behaviour tracking.
+// # PostHog analytics — consent-first event tracking.
+// # Nothing fires until the user explicitly consents via the cookie banner.
 // # Set NEXT_PUBLIC_POSTHOG_KEY and NEXT_PUBLIC_POSTHOG_HOST env vars.
 
 import posthog from 'posthog-js'
@@ -8,11 +7,38 @@ import posthog from 'posthog-js'
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? ''
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com'
 
+// # localStorage key for consent state.
+const CONSENT_KEY = 'fluentpath_analytics_consent'
+
 let initialised = false
 
-// # Initialise PostHog (call once in the app provider).
+// # Check if the user has given analytics consent.
+export function hasAnalyticsConsent(): boolean {
+  if (typeof window === 'undefined') return false
+  return localStorage.getItem(CONSENT_KEY) === 'granted'
+}
+
+// # Grant consent — initialises PostHog and starts tracking.
+export function grantAnalyticsConsent() {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(CONSENT_KEY, 'granted')
+  initPostHog()
+}
+
+// # Revoke consent — stops PostHog and clears stored data.
+export function revokeAnalyticsConsent() {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(CONSENT_KEY, 'denied')
+  if (POSTHOG_KEY) {
+    posthog.opt_out_capturing()
+    posthog.reset()
+  }
+}
+
+// # Initialise PostHog — only fires if consent was previously granted.
 export function initPostHog() {
   if (initialised || !POSTHOG_KEY || typeof window === 'undefined') return
+  if (!hasAnalyticsConsent()) return
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     capture_pageview: true,
@@ -25,13 +51,13 @@ export function initPostHog() {
 
 // # Identify the user after sign-in.
 export function identifyUser(userId: string, properties?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return
+  if (!POSTHOG_KEY || !hasAnalyticsConsent()) return
   posthog.identify(userId, properties)
 }
 
 // # Track a custom event.
 export function trackEvent(event: string, properties?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return
+  if (!POSTHOG_KEY || !hasAnalyticsConsent()) return
   posthog.capture(event, properties)
 }
 

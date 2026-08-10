@@ -16,6 +16,35 @@ const BLOCKED_COUNTRIES = new Set([
   'RU', 'BY', 'IR', 'KP', 'SY', 'CU',
 ])
 
+// # ─── Security headers applied to every response ──────────────────────
+const SECURITY_HEADERS: Record<string, string> = {
+  // # Prevent clickjacking — only allow FluentPath to frame itself.
+  'X-Frame-Options': 'SAMEORIGIN',
+  // # Block MIME type sniffing (stops browsers treating uploads as scripts).
+  'X-Content-Type-Options': 'nosniff',
+  // # Force HTTPS for 1 year, include subdomains.
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  // # Prevent reflected XSS in older browsers.
+  'X-XSS-Protection': '1; mode=block',
+  // # Only send origin as referrer to external sites.
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  // # Restrict what the page can do (no camera, microphone except for speaking assessment).
+  'Permissions-Policy': 'camera=(), geolocation=(), microphone=(self)',
+  // # CSP: allow self, inline styles (Tailwind), PostHog, Gemini, ElevenLabs, Paddle, Vercel.
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.paddle.com https://*.posthog.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://*.posthog.com https://generativelanguage.googleapis.com https://api.elevenlabs.io https://*.paddle.com https://*.turso.io",
+    "frame-src 'self' https://*.paddle.com",
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; '),
+}
+
 export function middleware(request: NextRequest) {
   // # Vercel provides the visitor's country via this header.
   // # In local dev, this header is absent — don't block.
@@ -28,7 +57,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(blockedUrl)
   }
 
-  return NextResponse.next()
+  // # Apply security headers to every response.
+  const response = NextResponse.next()
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    response.headers.set(key, value)
+  }
+  return response
 }
 
 // # Run middleware on all routes EXCEPT:

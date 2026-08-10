@@ -43,13 +43,15 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // # 3. Delete learner row — cascading deletes remove all child data
-    // # (streaks, badges, activity, mastery, placements, tests, diagnoses,
-    // # practice sessions, lesson completions, discussion posts/replies).
-    await db.delete(learners).where(eq(learners.id, learnerId))
-
-    // # 4. Delete auth user row — removes sessions and accounts too.
-    await db.delete(authUsers).where(eq(authUsers.email, email))
+    // # 3. Delete learner + auth user atomically — prevents orphaned rows
+    // # if one delete succeeds and the other fails.
+    await db.transaction(async (tx) => {
+      // # Cascading deletes remove all child data (streaks, badges, activity,
+      // # mastery, placements, tests, diagnoses, practice sessions, etc.).
+      await tx.delete(learners).where(eq(learners.id, learnerId))
+      // # Remove auth user row — sessions and accounts cascade too.
+      await tx.delete(authUsers).where(eq(authUsers.email, email))
+    })
 
     return jsonOk({ deleted: true })
   } catch (err) {

@@ -169,7 +169,7 @@ export default function Home() {
               {
                 icon: '▒',
                 title: 'AI Writing Feedback',
-                desc: 'Submit essays and get scored against the official IELTS rubric. Task Achievement, Coherence, Lexical Resource, Grammar.',
+                desc: 'Submit essays and get scored using publicly available IELTS band descriptors. Task Achievement, Coherence, Lexical Resource, Grammar.',
               },
               {
                 icon: '◔',
@@ -204,7 +204,7 @@ export default function Home() {
           </h2>
           <p className="mx-auto mb-16 max-w-2xl text-center text-neutral-500">
             Our AI doesn&apos;t just score you — it tells you exactly what to fix and how to improve.
-            Trained on official exam rubrics so feedback mirrors what real examiners look for.
+            Modelled on publicly available exam band descriptors so feedback mirrors what real examiners look for.
           </p>
 
           <div className="grid gap-8 sm:grid-cols-2">
@@ -523,7 +523,7 @@ export default function Home() {
               },
               {
                 q: 'How does the AI writing and speaking feedback work?',
-                a: 'Your essays are scored against the official IELTS rubric (Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy). Speaking recordings are assessed for Fluency, Vocabulary, Grammar, and Pronunciation. You get scores, specific feedback, and a corrected version.',
+                a: 'Your essays are scored using publicly available IELTS band descriptors (Task Achievement, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy). Speaking recordings are assessed for Fluency, Vocabulary, Grammar, and Pronunciation. You get scores, specific feedback, and a corrected version.',
               },
               {
                 q: 'What makes FluentPath different from other test prep platforms?',
@@ -531,7 +531,7 @@ export default function Home() {
               },
               {
                 q: 'Can I prepare for PTE and OET too, not just IELTS?',
-                a: 'Yes. We offer full mock tests for IELTS Academic, IELTS General Training, PTE Academic, and OET. Each exam uses its own authentic scoring system — bands for IELTS, 10–90 for PTE, and A–E grades for OET.',
+                a: 'Yes. We offer full mock tests for IELTS Academic, IELTS General Training, PTE Academic, and OET. Each exam uses its own exam-style scoring system — bands for IELTS, 10–90 for PTE, and A–E grades for OET.',
               },
               {
                 q: 'Can I cancel my subscription anytime?',

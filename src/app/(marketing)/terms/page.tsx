@@ -11,11 +11,6 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <>
-      {/* # Draft banner — remove after legal review */}
-      <div className="border-b border-yellow-500 bg-yellow-50 px-6 py-3 text-center text-sm text-yellow-800">
-        DRAFT — This document is pending legal review and may change before launch.
-      </div>
-
       <main className="mx-auto max-w-3xl px-6 py-12">
         {/* # Page title — serif font per design spec */}
         <h1 className="font-serif text-4xl font-bold">Terms of Service</h1>

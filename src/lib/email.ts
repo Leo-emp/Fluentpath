@@ -44,6 +44,11 @@ async function send(to: string, subject: string, html: string): Promise<EmailRes
   }
 }
 
+// # Escape HTML entities — prevents injection via user-provided names/text.
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 // # ═══════════════════════════════════════════════════════════════════
 // # EMAIL TEMPLATES
 // # ═══════════════════════════════════════════════════════════════════
@@ -54,7 +59,7 @@ export async function sendWelcomeEmail(to: string, name: string | null): Promise
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <h1 style="font-size: 28px; margin-bottom: 8px;">Welcome to FluentPath</h1>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
-        Hi ${displayName},
+        Hi ${esc(displayName)},
       </p>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
         Your account is ready. Here's how to get started:
@@ -83,7 +88,7 @@ export async function sendStreakReminderEmail(to: string, name: string | null, c
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <h1 style="font-size: 28px; margin-bottom: 8px;">Your streak is at risk</h1>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
-        Hi ${displayName},
+        Hi ${esc(displayName)},
       </p>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
         You've been practising for <strong>${currentStreak} days straight</strong>.
@@ -104,15 +109,15 @@ export async function sendStreakReminderEmail(to: string, name: string | null, c
 
 export async function sendMilestoneEmail(to: string, name: string | null, milestone: string, description: string): Promise<EmailResult> {
   const displayName = name || 'there'
-  return send(to, `You earned: ${milestone}`, `
+  return send(to, `You earned: ${esc(milestone)}`, `
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <h1 style="font-size: 28px; margin-bottom: 8px;">Achievement unlocked</h1>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
-        Hi ${displayName},
+        Hi ${esc(displayName)},
       </p>
       <div style="background: #f8f8f8; border: 1px solid #eee; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
-        <p style="font-size: 32px; font-weight: bold; margin: 0;">${milestone}</p>
-        <p style="color: #666; font-size: 14px; margin: 8px 0 0;">${description}</p>
+        <p style="font-size: 32px; font-weight: bold; margin: 0;">${esc(milestone)}</p>
+        <p style="color: #666; font-size: 14px; margin: 8px 0 0;">${esc(description)}</p>
       </div>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
         Keep going. Every session brings you closer to fluency.
@@ -140,7 +145,7 @@ export async function sendWeeklyProgressEmail(
     <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;">
       <h1 style="font-size: 28px; margin-bottom: 8px;">Weekly Progress</h1>
       <p style="color: #666; font-size: 16px; line-height: 1.6;">
-        Hi ${displayName}, here's your week at a glance:
+        Hi ${esc(displayName)}, here's your week at a glance:
       </p>
       <div style="background: #f8f8f8; border: 1px solid #eee; border-radius: 12px; padding: 24px; margin: 24px 0;">
         <table style="width: 100%; border-collapse: collapse;">

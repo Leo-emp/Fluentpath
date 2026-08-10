@@ -6,12 +6,17 @@ import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import { assessWriting } from '@/writing/feedback'
 
 export async function POST(request: NextRequest) {
   try {
     // # Auth check — only logged-in learners can use AI feedback.
-    await getAuthenticatedLearner(request)
+    const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Rate limit — 20 AI feedback requests per hour per user.
+    const limited = checkRateLimit(learnerId, RATE_LIMITS.aiFeedback)
+    if (limited) return limited
 
     const body = (await request.json()) as Record<string, unknown>
 
@@ -23,8 +28,14 @@ export async function POST(request: NextRequest) {
     if (typeof essay !== 'string' || essay.trim().length < 20) {
       return jsonError(400, 'Essay must be at least 20 characters')
     }
+    if (essay.length > 10_000) {
+      return jsonError(400, 'Essay must be under 10,000 characters')
+    }
     if (typeof prompt !== 'string' || prompt.trim().length < 10) {
       return jsonError(400, 'Prompt must be at least 10 characters')
+    }
+    if (prompt.length > 2_000) {
+      return jsonError(400, 'Prompt must be under 2,000 characters')
     }
     if (taskType !== 'task1' && taskType !== 'task2') {
       return jsonError(400, 'taskType must be "task1" or "task2"')

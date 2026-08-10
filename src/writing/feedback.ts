@@ -154,12 +154,12 @@ export async function assessWriting(req: WritingFeedbackRequest): Promise<Writin
 
   const prompt = buildAssessmentPrompt(req)
 
-  // # Call Gemini API directly via REST.
+  // # Call Gemini API — key in header, never in URL (avoids log leaks).
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 4096, temperature: 0.3 },
