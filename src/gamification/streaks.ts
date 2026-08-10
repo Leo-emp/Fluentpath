@@ -91,7 +91,7 @@ export async function recordActivity(
       updatedAt: now,
     })
     streakIncreased = true
-    streak = { learnerId, currentStreak: 1, longestStreak: 1, lastActiveDate: todayDate, totalXp: event.xpEarned, weeklyXp: event.xpEarned, weekStartDate: weekStart, createdAt: now, updatedAt: now }
+    streak = { learnerId, currentStreak: 1, longestStreak: 1, lastActiveDate: todayDate, totalXp: event.xpEarned, weeklyXp: event.xpEarned, dailyXpGoal: 0, weekStartDate: weekStart, createdAt: now, updatedAt: now }
   } else {
     // # Calculate new streak value based on last active date.
     let newStreak = streak.currentStreak
@@ -192,7 +192,6 @@ async function checkAndAwardBadges(
     .where(eq(learnerBadges.learnerId, learnerId))
   const earnedSet = new Set(earned.map(b => b.badgeType))
 
-  // # Check each milestone and award if not already earned.
   const newBadges: string[] = []
 
   // # Streak badges.
@@ -219,6 +218,34 @@ async function checkAndAwardBadges(
     if (streak.totalXp >= threshold && !earnedSet.has(badge)) {
       newBadges.push(badge)
     }
+  }
+
+  // # Item-count badges — sum all daily activity items for this learner.
+  const itemBadges = [
+    { threshold: 50, badge: 'items_50' },
+    { threshold: 200, badge: 'items_200' },
+    { threshold: 1000, badge: 'items_1000' },
+  ] as const
+  const needsItemCheck = itemBadges.some(m => !earnedSet.has(m.badge))
+  if (needsItemCheck) {
+    const rows = await db.select({ items: dailyActivity.itemsCompleted })
+      .from(dailyActivity)
+      .where(eq(dailyActivity.learnerId, learnerId))
+    const totalItems = rows.reduce((sum, r) => sum + r.items, 0)
+    for (const { threshold, badge } of itemBadges) {
+      if (totalItems >= threshold && !earnedSet.has(badge)) {
+        newBadges.push(badge)
+      }
+    }
+  }
+
+  // # Time-of-day badges — check current hour (UTC).
+  const hour = new Date(now).getUTCHours()
+  if (hour >= 0 && hour < 5 && !earnedSet.has('night_owl')) {
+    newBadges.push('night_owl')
+  }
+  if (hour >= 4 && hour < 6 && !earnedSet.has('early_bird')) {
+    newBadges.push('early_bird')
   }
 
   // # Insert all new badges.

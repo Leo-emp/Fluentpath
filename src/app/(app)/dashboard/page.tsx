@@ -10,6 +10,9 @@ import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/nav-bar'
 import { LevelBadge } from '@/components/level-badge'
 import { GamificationPanel } from '@/components/gamification-panel'
+import { DailyGoalWidget } from '@/components/daily-goal-widget'
+import { Leaderboard } from '@/components/leaderboard'
+import { BadgeCelebration } from '@/components/badge-celebration'
 import { ProgressPanel } from '@/components/progress-panel'
 import { PageSkeleton } from '@/components/page-skeleton'
 import { apiFetch } from '@/lib/api'
@@ -47,6 +50,7 @@ export default function DashboardPage() {
   const [diagnoses, setDiagnoses] = useState<DiagnosisSummary[]>([])
   const [gamification, setGamification] = useState<GamificationData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [newBadges, setNewBadges] = useState<string[]>([])
 
   // # Fetch learner profile + placement status + diagnoses on mount.
   useEffect(() => {
@@ -145,9 +149,14 @@ export default function DashboardPage() {
               </Card>
             </div>
 
+            {/* # Daily goal progress ring */}
+            <section className="mb-6">
+              <DailyGoalWidget />
+            </section>
+
             {/* # Gamification section — streaks, XP, badges, heatmap */}
             {gamification && (
-              <section className="mb-10">
+              <section className="mb-6">
                 <GamificationPanel
                   streak={gamification.streak}
                   activity={gamification.activity}
@@ -155,6 +164,11 @@ export default function DashboardPage() {
                 />
               </section>
             )}
+
+            {/* # Weekly leaderboard */}
+            <section className="mb-10">
+              <Leaderboard />
+            </section>
 
             {/* # Skill progress + predicted IELTS score */}
             <section className="mb-10">
@@ -186,6 +200,11 @@ export default function DashboardPage() {
           </>
         )}
       </main>
+
+      {/* # Badge celebration overlay — shown when new badges are earned */}
+      {newBadges.length > 0 && (
+        <BadgeCelebration badges={newBadges} onDone={() => setNewBadges([])} />
+      )}
     </>
   )
 }

@@ -36,6 +36,10 @@ export const learnerStreaks = sqliteTable(
     // # XP earned this week (resets every Monday). For weekly leaderboard.
     weeklyXp: integer('weekly_xp').notNull().default(0),
 
+    // # Daily XP target the learner chose (0 = no goal set).
+    // # Options: 0 (off), 20 (casual), 50 (regular), 100 (serious), 200 (intense).
+    dailyXpGoal: integer('daily_xp_goal').notNull().default(0),
+
     // # ISO date of the Monday that weeklyXp counts from.
     weekStartDate: text('week_start_date'),
 
