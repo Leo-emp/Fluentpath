@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { BLOG_ARTICLES } from '@/lib/reference/blog-articles'
+import { BlogCover } from '@/components/blog-cover'
 import { Footer } from '@/components/footer'
 
 // # Generate static params at build time so every article is pre-rendered.
@@ -228,10 +229,20 @@ export default async function BlogArticlePage({
         </div>
       </nav>
 
+      {/* # ─── HERO COVER ─── */}
+      <div className="mx-auto max-w-4xl px-6 pt-4">
+        <BlogCover
+          icon={article.coverIcon}
+          gradient={article.coverGradient}
+          title={article.title}
+          variant="hero"
+        />
+      </div>
+
       {/* # ─── ARTICLE ─── */}
-      <article className="mx-auto max-w-2xl px-6 pb-16 pt-12">
+      <article className="mx-auto max-w-2xl px-6 pb-16 pt-8">
         {/* # Back link */}
-        <Link href="/blog" className="mb-8 inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-black transition-colors">
+        <Link href="/blog" className="mb-6 inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-black transition-colors">
           &larr; All articles
         </Link>
 
@@ -244,11 +255,6 @@ export default async function BlogArticlePage({
             </span>
             <span className="text-xs text-neutral-400">{article.readingTime} min read</span>
           </div>
-
-          {/* # Title */}
-          <h1 className="mb-4 font-serif text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            {article.title}
-          </h1>
 
           {/* # Description */}
           <p className="mb-4 text-lg text-neutral-500">{article.description}</p>
@@ -300,12 +306,15 @@ export default async function BlogArticlePage({
               <Link
                 key={r.slug}
                 href={`/blog/${r.slug}`}
-                className="group rounded-xl border border-neutral-200 p-6 transition-all hover:border-neutral-400 hover:shadow-lg"
+                className="group overflow-hidden rounded-xl border border-neutral-200 transition-all hover:border-neutral-400 hover:shadow-lg"
               >
-                <h3 className="mb-2 font-semibold leading-snug group-hover:text-neutral-600 transition-colors">
-                  {r.title}
-                </h3>
-                <p className="text-sm text-neutral-500 line-clamp-2">{r.description}</p>
+                <BlogCover icon={r.coverIcon} gradient={r.coverGradient} title={r.title} />
+                <div className="p-5">
+                  <h3 className="mb-2 font-semibold leading-snug group-hover:text-neutral-600 transition-colors">
+                    {r.title}
+                  </h3>
+                  <p className="text-sm text-neutral-500 line-clamp-2">{r.description}</p>
+                </div>
               </Link>
             ))}
           </div>

@@ -1,9 +1,10 @@
 // # Blog listing page — displays all articles sorted by date.
-// # Each card links to /blog/[slug]. Targets high-volume SEO keywords.
+// # Each card has a CSS-generated cover image with category icon.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BLOG_ARTICLES } from '@/lib/reference/blog-articles'
+import { BlogCover } from '@/components/blog-cover'
 import { Footer } from '@/components/footer'
 
 export const metadata: Metadata = {
@@ -56,41 +57,85 @@ export default function BlogPage() {
         </p>
       </section>
 
-      {/* # ─── ARTICLE GRID ─── */}
+      {/* # ─── FEATURED ARTICLE (first/newest) ─── */}
+      {articles[0] && (
+        <section className="mx-auto max-w-5xl px-6 pb-12">
+          <Link
+            href={`/blog/${articles[0].slug}`}
+            className="group block overflow-hidden rounded-xl border border-neutral-200 transition-all hover:border-neutral-400 hover:shadow-xl"
+          >
+            <BlogCover
+              icon={articles[0].coverIcon}
+              gradient={articles[0].coverGradient}
+              title={articles[0].title}
+              variant="hero"
+            />
+            <div className="p-6 sm:p-8">
+              <div className="mb-3 flex items-center gap-3">
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${CATEGORY_COLOURS[articles[0].category] || 'bg-neutral-100 text-neutral-600'}`}>
+                  {articles[0].category.toUpperCase()}
+                </span>
+                <span className="text-xs text-neutral-400">{articles[0].readingTime} min read</span>
+                <time className="text-xs text-neutral-400" dateTime={articles[0].publishedAt}>
+                  {new Date(articles[0].publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </time>
+              </div>
+              <h2 className="mb-2 text-2xl font-bold leading-snug group-hover:text-neutral-600 transition-colors sm:text-3xl">
+                {articles[0].title}
+              </h2>
+              <p className="max-w-2xl text-neutral-500">{articles[0].description}</p>
+            </div>
+          </Link>
+        </section>
+      )}
+
+      {/* # ─── ARTICLE GRID (rest) ─── */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article) => (
+          {articles.slice(1).map((article) => (
             <Link
               key={article.slug}
               href={`/blog/${article.slug}`}
-              className="group flex flex-col rounded-xl border border-neutral-200 bg-white p-6 transition-all hover:border-neutral-400 hover:shadow-lg"
+              className="group flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all hover:border-neutral-400 hover:shadow-lg"
             >
-              {/* # Category badge + reading time */}
-              <div className="mb-4 flex items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${CATEGORY_COLOURS[article.category] || 'bg-neutral-100 text-neutral-600'}`}>
-                  {article.category.toUpperCase()}
-                </span>
-                <span className="text-xs text-neutral-400">{article.readingTime} min read</span>
+              {/* # Cover image */}
+              <BlogCover
+                icon={article.coverIcon}
+                gradient={article.coverGradient}
+                title={article.title}
+              />
+
+              {/* # Card body */}
+              <div className="flex flex-1 flex-col p-5">
+                {/* # Category badge + reading time */}
+                <div className="mb-3 flex items-center gap-3">
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${CATEGORY_COLOURS[article.category] || 'bg-neutral-100 text-neutral-600'}`}>
+                    {article.category.toUpperCase()}
+                  </span>
+                  <span className="text-xs text-neutral-400">{article.readingTime} min read</span>
+                </div>
+
+                {/* # Title */}
+                <h2 className="mb-2 text-lg font-semibold leading-snug group-hover:text-neutral-600 transition-colors">
+                  {article.title}
+                </h2>
+
+                {/* # Description */}
+                <p className="mb-4 flex-1 text-sm leading-relaxed text-neutral-500 line-clamp-3">
+                  {article.description}
+                </p>
+
+                {/* # Date */}
+                <time className="text-xs text-neutral-400" dateTime={article.publishedAt}>
+                  {new Date(article.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
               </div>
-
-              {/* # Title */}
-              <h2 className="mb-2 text-lg font-semibold leading-snug group-hover:text-neutral-600 transition-colors">
-                {article.title}
-              </h2>
-
-              {/* # Description */}
-              <p className="mb-4 flex-1 text-sm leading-relaxed text-neutral-500">
-                {article.description}
-              </p>
-
-              {/* # Date */}
-              <time className="text-xs text-neutral-400" dateTime={article.publishedAt}>
-                {new Date(article.publishedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </time>
             </Link>
           ))}
         </div>
