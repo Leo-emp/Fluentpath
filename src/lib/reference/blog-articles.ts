@@ -10,9 +10,8 @@ export interface BlogArticle {
   readingTime: number
   category: 'ielts' | 'pte' | 'oet' | 'english' | 'study-tips'
   tags: string[]
-  // # Cover image config — CSS gradient + icon for zero-dependency covers.
-  coverIcon: string
-  coverGradient: string
+  // # Each article gets a unique cover composition (0-9).
+  coverId: number
   content: string
 }
 
@@ -25,8 +24,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     readingTime: 8,
     category: 'ielts',
     tags: ['IELTS', 'Writing', 'Task 2', 'Band 7'],
-    coverIcon: 'pencil',
-    coverGradient: 'from-blue-600 to-indigo-700',
+    coverId: 0,
     content: `## Why Task 2 Matters More Than You Think
 
 IELTS Writing Task 2 accounts for two-thirds of your Writing band score. A strong Task 2 can compensate for a weaker Task 1, but not the other way around. Yet most candidates spend too long on Task 1 and rush through Task 2.
@@ -115,8 +113,7 @@ The fastest way to improve is to write under timed conditions and get immediate,
     readingTime: 7,
     category: 'study-tips',
     tags: ['PTE', 'IELTS', 'Comparison', 'Test Selection'],
-    coverIcon: 'scales',
-    coverGradient: 'from-purple-600 to-violet-700',
+    coverId: 1,
     content: `## The Short Answer
 
 Neither test is objectively easier. PTE favours fast readers and clear speakers. IELTS favours strong writers and those comfortable with human interaction. Your strengths determine which test is "easier" for you.
@@ -208,8 +205,7 @@ Choose the test that plays to your strengths. If you're unsure, take FluentPath'
     readingTime: 6,
     category: 'ielts',
     tags: ['IELTS', 'Speaking', 'Part 2', 'Cue Card'],
-    coverIcon: 'mic',
-    coverGradient: 'from-sky-500 to-blue-700',
+    coverId: 2,
     content: `## The Challenge
 
 You get a cue card with a topic and 4 bullet points. You have 1 minute to prepare and must speak for 1-2 minutes. Most candidates either run out of things to say after 40 seconds or ramble without structure.
@@ -289,8 +285,7 @@ FluentPath's AI speaking assessment gives you instant scores on Fluency, Vocabul
     readingTime: 7,
     category: 'oet',
     tags: ['OET', 'Writing', 'Referral Letter', 'Healthcare'],
-    coverIcon: 'stethoscope',
-    coverGradient: 'from-emerald-500 to-teal-700',
+    coverId: 3,
     content: `## What the OET Writing Task Requires
 
 You receive case notes about a patient and must write a referral, discharge, or transfer letter to another healthcare professional. You have 45 minutes and must write approximately 180-200 words.
@@ -375,8 +370,7 @@ FluentPath provides OET writing practice with AI feedback scored against OET cri
     readingTime: 6,
     category: 'english',
     tags: ['Vocabulary', 'English Learning', 'Study Methods'],
-    coverIcon: 'book',
-    coverGradient: 'from-amber-500 to-orange-600',
+    coverId: 4,
     content: `## Why Most Vocabulary Study Fails
 
 Memorising word lists doesn't work. Research shows you forget 80% of new words within 24 hours if you only see them once. Yet that's exactly what most learners do — read a list, feel productive, forget everything.
@@ -460,8 +454,7 @@ FluentPath's vocabulary reference covers 1,250+ entries across 25 categories, al
     readingTime: 6,
     category: 'ielts',
     tags: ['IELTS', 'Reading', 'Time Management', 'Test Strategy'],
-    coverIcon: 'clock',
-    coverGradient: 'from-blue-500 to-cyan-600',
+    coverId: 5,
     content: `## The Problem
 
 IELTS Academic Reading gives you 3 passages and 40 questions in 60 minutes. That's 90 seconds per question — including reading time. Most candidates run out of time on Passage 3 and guess the last 10 answers.
@@ -527,8 +520,7 @@ Untimed practice builds comprehension but not exam readiness. Always practice wi
     readingTime: 5,
     category: 'pte',
     tags: ['PTE', 'Speaking', 'Read Aloud', 'Pronunciation'],
-    coverIcon: 'volume',
-    coverGradient: 'from-fuchsia-500 to-purple-700',
+    coverId: 6,
     content: `## Why Read Aloud Is the Most Important PTE Question
 
 Read Aloud is the only PTE question that contributes to BOTH your Speaking AND Reading scores. A strong Read Aloud performance can boost two scores simultaneously. Most high-scorers prioritise this task above all others.
@@ -599,8 +591,7 @@ FluentPath's TTS pronunciation feature lets you hear the correct pronunciation o
     readingTime: 7,
     category: 'english',
     tags: ['Grammar', 'Advanced', 'Common Mistakes', 'B2-C1'],
-    coverIcon: 'check',
-    coverGradient: 'from-rose-500 to-red-600',
+    coverId: 7,
     content: `## The B2 Plateau
 
 Most English learners hit a plateau at B2. They can communicate effectively, but their writing and speaking contain persistent errors that cap their exam scores at Band 6-6.5. These aren't beginner mistakes — they're subtle patterns that native speakers notice but learners don't.
@@ -703,8 +694,7 @@ Awareness is the first step, but correction requires practice with feedback. Flu
     readingTime: 5,
     category: 'english',
     tags: ['CEFR', 'English Levels', 'A1', 'B2', 'C1'],
-    coverIcon: 'layers',
-    coverGradient: 'from-neutral-600 to-neutral-800',
+    coverId: 8,
     content: `## What Is CEFR?
 
 The Common European Framework of Reference for Languages (CEFR) is the international standard for describing language ability. It defines six levels from A1 (beginner) to C2 (mastery). Universities, employers, and immigration authorities worldwide use CEFR to set language requirements.
@@ -778,8 +768,7 @@ FluentPath's free placement test pinpoints your CEFR level across reading, writi
     readingTime: 5,
     category: 'oet',
     tags: ['OET', 'Listening', 'Healthcare', 'Tips'],
-    coverIcon: 'headphones',
-    coverGradient: 'from-green-500 to-emerald-700',
+    coverId: 9,
     content: `## Why OET Listening Is Different
 
 Unlike IELTS or PTE, OET Listening uses healthcare-specific scenarios: doctor-patient consultations, ward handovers, conference presentations. If you're a nurse, doctor, pharmacist, or other healthcare professional, this should be familiar territory — but the test format still trips people up.

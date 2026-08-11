@@ -232,9 +232,9 @@ export default async function BlogArticlePage({
       {/* # ─── HERO COVER ─── */}
       <div className="mx-auto max-w-4xl px-6 pt-4">
         <BlogCover
-          icon={article.coverIcon}
-          gradient={article.coverGradient}
+          coverId={article.coverId}
           title={article.title}
+          category={article.category}
           variant="hero"
         />
       </div>
@@ -308,7 +308,7 @@ export default async function BlogArticlePage({
                 href={`/blog/${r.slug}`}
                 className="group overflow-hidden rounded-xl border border-neutral-200 transition-all hover:border-neutral-400 hover:shadow-lg"
               >
-                <BlogCover icon={r.coverIcon} gradient={r.coverGradient} title={r.title} />
+                <BlogCover coverId={r.coverId} title={r.title} category={r.category} />
                 <div className="p-5">
                   <h3 className="mb-2 font-semibold leading-snug group-hover:text-neutral-600 transition-colors">
                     {r.title}

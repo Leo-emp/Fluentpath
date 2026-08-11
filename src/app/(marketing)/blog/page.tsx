@@ -65,9 +65,9 @@ export default function BlogPage() {
             className="group block overflow-hidden rounded-xl border border-neutral-200 transition-all hover:border-neutral-400 hover:shadow-xl"
           >
             <BlogCover
-              icon={articles[0].coverIcon}
-              gradient={articles[0].coverGradient}
+              coverId={articles[0].coverId}
               title={articles[0].title}
+              category={articles[0].category}
               variant="hero"
             />
             <div className="p-6 sm:p-8">
@@ -102,9 +102,9 @@ export default function BlogPage() {
             >
               {/* # Cover image */}
               <BlogCover
-                icon={article.coverIcon}
-                gradient={article.coverGradient}
+                coverId={article.coverId}
                 title={article.title}
+                category={article.category}
               />
 
               {/* # Card body */}
