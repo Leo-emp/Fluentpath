@@ -431,7 +431,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 sm:grid-cols-4">
           {[
             { value: '1,000+', label: 'Practice Items' },
-            { value: '4', label: 'Mock Exams' },
+            { value: '987', label: 'Structured Lessons' },
             { value: '73', label: 'Skill Nodes' },
             { value: '12', label: 'Exercise Types' },
           ].map((s) => (
@@ -440,6 +440,53 @@ export default function Home() {
               <p className="mt-1 text-sm text-neutral-400">{s.label}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* # ─── WHY FLUENTPATH ─── */}
+      {/* # Competitive differentiators — why us over alternatives. */}
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-5xl">
+          <p className="mb-3 text-center text-sm font-medium uppercase tracking-widest text-neutral-400">
+            Why FluentPath
+          </p>
+          <h2 className="mb-16 text-center font-serif text-4xl font-bold sm:text-5xl">
+            What makes us different
+          </h2>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                title: '3 exams, 1 platform',
+                desc: 'IELTS, PTE Academic, and OET preparation in a single subscription. No switching between apps.',
+              },
+              {
+                title: 'AI, not generic tips',
+                desc: 'Every piece of feedback is specific to YOUR essay, YOUR recording, YOUR skill gaps. Not pre-written templates.',
+              },
+              {
+                title: 'Adaptive, not linear',
+                desc: 'Our 73-node skill graph finds your weaknesses and drills them. No wasting time on skills you already have.',
+              },
+              {
+                title: 'A1 to C2 coverage',
+                desc: 'Most exam prep starts at B1. We cover beginners to advanced — start wherever you are and grow to exam readiness.',
+              },
+              {
+                title: 'Fraction of tutor cost',
+                desc: 'Private IELTS tutors charge $50-100/hour. Get unlimited AI feedback for $49/month — that pays for itself in one session.',
+              },
+              {
+                title: '7-day guarantee',
+                desc: 'Not satisfied within the first week? Full refund, no questions asked. We only win when you improve.',
+              },
+            ].map((d) => (
+              <div key={d.title} className="rounded-xl border border-neutral-200 p-6">
+                <h3 className="mb-2 text-base font-bold">{d.title}</h3>
+                <p className="text-sm leading-relaxed text-neutral-500">{d.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -550,6 +597,42 @@ export default function Home() {
         </div>
       </section>
 
+      {/* # ─── EMAIL CAPTURE ─── */}
+      {/* # For visitors not ready to sign up — capture email for follow-up. */}
+      <section className="border-t border-neutral-100 bg-neutral-50 px-6 py-24">
+        <div className="mx-auto max-w-xl text-center">
+          <h2 className="mb-4 font-serif text-3xl font-bold">
+            Not ready yet? Get free tips.
+          </h2>
+          <p className="mb-8 text-neutral-500">
+            Weekly IELTS strategies, PTE tricks, and English improvement tips.
+            No spam — unsubscribe anytime.
+          </p>
+          <form
+            action="/api/subscribe"
+            method="POST"
+            className="flex flex-col gap-3 sm:flex-row"
+          >
+            <input
+              type="email"
+              name="email"
+              placeholder="your@email.com"
+              required
+              className="flex-1 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-black placeholder:text-neutral-400 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-black px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+            >
+              Send me tips
+            </button>
+          </form>
+          <p className="mt-3 text-xs text-neutral-400">
+            Join 0 learners. We respect your inbox.
+          </p>
+        </div>
+      </section>
+
       {/* # ─── FINAL CTA ─── */}
       <section className="px-6 py-24 text-center">
         <div className="mx-auto max-w-2xl">
@@ -566,6 +649,9 @@ export default function Home() {
           >
             Get Started Free
           </Link>
+          <p className="mt-4 text-xs text-neutral-400">
+            Free forever for basic features. No credit card required.
+          </p>
         </div>
       </section>
 

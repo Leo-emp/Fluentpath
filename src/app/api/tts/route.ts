@@ -7,6 +7,7 @@ import { type NextRequest } from 'next/server'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { AuthError } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkPlanAccess } from '@/app/api/_lib/plan-gate'
 import { checkRateLimit, RATE_LIMITS } from '@/app/api/_lib/rate-limit'
 import { createElevenLabsProvider } from '@/tts/elevenlabs'
 import { getStorageProvider } from '@/storage/provider'
@@ -17,6 +18,12 @@ const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'
 export async function POST(request: NextRequest) {
   try {
     const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Plan gate — TTS pronunciation requires complete tier.
+    const access = await checkPlanAccess(learnerId, 'tts')
+    if (!access.allowed) {
+      return jsonError(403, access.reason ?? 'Upgrade to Complete for TTS pronunciation')
+    }
 
     // # Rate limit — 50 TTS requests per hour per user.
     const limited = checkRateLimit(learnerId, RATE_LIMITS.tts)

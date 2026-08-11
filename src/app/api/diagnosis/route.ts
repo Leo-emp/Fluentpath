@@ -7,6 +7,7 @@ import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { ValidationError, AuthError, requireString } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkPlanAccess } from '@/app/api/_lib/plan-gate'
 import { findDiagnosesByLearner, createDiagnosis } from '@/db/repositories/diagnoses'
 import { findTestResultById } from '@/db/repositories/test-results'
 import { findLearnerById } from '@/db/repositories/learners'
@@ -33,6 +34,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Plan gate — diagnosis requires exam tier or higher.
+    const access = await checkPlanAccess(learnerId, 'diagnosis')
+    if (!access.allowed) {
+      return jsonError(403, access.reason ?? 'Upgrade required')
+    }
+
     const db = getDb()
     const body = (await request.json()) as Record<string, unknown>
     const testResultId = requireString(body, 'testResultId')

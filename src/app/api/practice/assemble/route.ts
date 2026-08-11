@@ -3,6 +3,7 @@ import { getDb } from '@/app/api/_lib/db'
 import { jsonOk, jsonError } from '@/app/api/_lib/response'
 import { ValidationError, AuthError, optionalNumber, optionalArray, optionalObject } from '@/app/api/_lib/validate'
 import { getAuthenticatedLearner } from '@/app/api/_lib/auth'
+import { checkPlanAccess } from '@/app/api/_lib/plan-gate'
 import { assembleSession } from '@/sequencer/assemble'
 import type { ActionPlan } from '@/diagnosis/types'
 
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
   try {
     // Auth: get learnerId from session (not from body).
     const { learnerId } = await getAuthenticatedLearner(request)
+
+    // # Plan gate — free tier gets limited practice.
+    const access = await checkPlanAccess(learnerId, 'practice')
+    if (!access.allowed) {
+      return jsonError(403, access.reason ?? 'Upgrade required')
+    }
 
     const body = (await request.json()) as Record<string, unknown>
     const db = getDb()
