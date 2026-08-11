@@ -3,6 +3,7 @@
 
 import type { MetadataRoute } from 'next'
 import { ALL_LESSONS } from '@/lib/reference/lesson-lookup'
+import { BLOG_ARTICLES } from '@/lib/reference/blog-articles'
 
 const BASE = 'https://fluentpath.co'
 
@@ -33,5 +34,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }))
 
-  return [...staticPages, ...lessonPages]
+  // # Blog article pages — high SEO value, each targets a keyword cluster.
+  const blogPages: MetadataRoute.Sitemap = [
+    { url: `${BASE}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    ...BLOG_ARTICLES.map(article => ({
+      url: `${BASE}/blog/${article.slug}`,
+      lastModified: new Date(article.publishedAt),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
+  ]
+
+  return [...staticPages, ...blogPages, ...lessonPages]
 }

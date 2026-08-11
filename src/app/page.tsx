@@ -16,6 +16,9 @@ export default function Home() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <span className="font-serif text-2xl font-bold tracking-tight">FluentPath</span>
         <div className="flex items-center gap-6">
+          <Link href="/blog" className="text-sm text-neutral-500 hover:text-black transition-colors">
+            Blog
+          </Link>
           <Link href="/pricing" className="text-sm text-neutral-500 hover:text-black transition-colors">
             Pricing
           </Link>

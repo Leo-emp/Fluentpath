@@ -11,6 +11,7 @@ export function Footer() {
       <div className="mx-auto max-w-4xl">
         {/* # Legal page links */}
         <div className="mb-4 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          <Link href="/blog" className="hover:underline">Blog</Link>
           <Link href="/pricing" className="hover:underline">Pricing</Link>
           <Link href="/privacy" className="hover:underline">Privacy</Link>
           <Link href="/terms" className="hover:underline">Terms</Link>
