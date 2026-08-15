@@ -1,0 +1,446 @@
+<title>FluentPath Architecture</title>
+<style>
+:root {
+  --bg: #080C14;
+  --surface: #0E1320;
+  --text: #A8B8C8;
+  --text-dim: #4A6070;
+  --text-bright: #E8EEF4;
+  --teal: #26A69A;
+  --violet: #7C4DFF;
+  --amber: #FFB300;
+  --rose: #EF5350;
+  --sky: #29B6F6;
+  --lime: #9CCC65;
+  --connector: #1A2838;
+}
+
+*,*::before,*::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  padding: 2rem 1.25rem;
+  min-height: 100vh;
+}
+.page { max-width: 1140px; margin: 0 auto; }
+
+header { text-align: center; margin-bottom: 1.5rem; }
+.eyebrow { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.22em; color: var(--teal); margin-bottom: 0.25rem; }
+h1 { font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace; font-size: 1.3rem; font-weight: 300; color: var(--text-bright); }
+.subtitle { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem; }
+
+.diagram-wrap { overflow-x: auto; margin-bottom: 1.2rem; }
+svg.arch { display: block; width: 100%; min-width: 780px; height: auto; }
+.node rect, .node ellipse { transition: filter 0.2s; cursor: default; }
+.node:hover rect, .node:hover ellipse { filter: brightness(1.4) saturate(1.2); }
+.node text { pointer-events: none; user-select: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .flow-dash { stroke-dasharray: 6 4; animation: flowA 1.4s linear infinite; }
+  @keyframes flowA { to { stroke-dashoffset: -10; } }
+}
+
+.cefr-bar {
+  display: flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.85rem;
+  background: #0A1018; border: 1px solid #1A2838; border-radius: 7px;
+  margin-bottom: 1.2rem; overflow-x: auto;
+  font-size: 0.65rem; font-family: ui-monospace, monospace;
+}
+.cefr-label { font-weight: 700; color: var(--teal); letter-spacing: 0.1em; white-space: nowrap; margin-right: 0.2rem; }
+.cefr-item { white-space: nowrap; padding: 0.15rem 0.5rem; border-radius: 3px; border: 1px solid #1A2838; }
+.cefr-a { color: #9CCC65; background: #0A1408; border-color: #1A2818; }
+.cefr-b { color: #FFB300; background: #141008; border-color: #282018; }
+.cefr-c { color: #EF5350; background: #140808; border-color: #281818; }
+.cefr-arrow { color: var(--teal); opacity: 0.4; font-size: 0.7rem; }
+
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 0.55rem; margin-bottom: 1.2rem;
+}
+.stat { background: var(--surface); border: 1px solid #1A2838; border-radius: 5px; padding: 0.55rem 0.65rem; text-align: center; }
+.stat-val { display: block; font-family: ui-monospace, monospace; font-size: 1rem; font-weight: 600; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+.stat-lbl { display: block; font-size: 0.58rem; color: var(--text-dim); margin-top: 0.1rem; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 0.85rem; justify-content: center; font-size: 0.65rem; color: var(--text-dim); }
+.legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.footer { text-align: center; margin-top: 1.4rem; font-size: 0.58rem; color: var(--text-dim); opacity: 0.5; }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">FLUENTPATH</p>
+    <h1>System Architecture</h1>
+    <p class="subtitle">Adaptive English A1–C2, CEFR skill graph, AI assessment, mastery decay, exam prep (IELTS/PTE/OET)</p>
+  </header>
+
+  <div class="diagram-wrap">
+    <svg class="arch" viewBox="0 0 1080 700" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="22" height="22" patternUnits="userSpaceOnUse">
+          <path d="M22 0L0 0 0 22" fill="none" stroke="#0E1824" stroke-width="0.4"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+
+      <!-- === LAYER LABELS === -->
+      <text transform="rotate(-90,16,55)" x="16" y="55" text-anchor="middle"
+            fill="#29B6F6" font-size="7" font-weight="700" letter-spacing="0.14em" font-family="system-ui" opacity="0.45">INTERFACE</text>
+      <text transform="rotate(-90,16,190)" x="16" y="190" text-anchor="middle"
+            fill="#7C4DFF" font-size="7" font-weight="700" letter-spacing="0.14em" font-family="system-ui" opacity="0.45">DIAGNOSIS</text>
+      <text transform="rotate(-90,16,350)" x="16" y="350" text-anchor="middle"
+            fill="#26A69A" font-size="7" font-weight="700" letter-spacing="0.14em" font-family="system-ui" opacity="0.45">LEARNING</text>
+      <text transform="rotate(-90,16,510)" x="16" y="510" text-anchor="middle"
+            fill="#FFB300" font-size="7" font-weight="700" letter-spacing="0.14em" font-family="system-ui" opacity="0.45">MASTERY</text>
+      <text transform="rotate(-90,16,630)" x="16" y="630" text-anchor="middle"
+            fill="#EF5350" font-size="7" font-weight="700" letter-spacing="0.14em" font-family="system-ui" opacity="0.45">DATA</text>
+
+      <!-- === LEARNER DASHBOARD === -->
+      <g class="node">
+        <title>Learner dashboard: skill graph visualization, lesson queue, progress tracking, streaks, achievements</title>
+        <rect x="100" y="14" width="580" height="44" rx="6"
+              fill="#0C1828" stroke="#29B6F6" stroke-width="1.6"/>
+        <text x="390" y="34" text-anchor="middle" fill="#E8EEF4"
+              font-size="12" font-weight="700" font-family="system-ui">LEARNER DASHBOARD</text>
+        <text x="390" y="49" text-anchor="middle" fill="#4A6070"
+              font-size="8" font-family="ui-monospace, monospace">skill graph · lessons · progress · streaks · achievements</text>
+      </g>
+
+      <!-- API bar -->
+      <g class="node">
+        <title>39 API routes: diagnosis, lessons, placement, speaking, writing, practice, progress, mock-test, gamification</title>
+        <rect x="100" y="75" width="580" height="32" rx="4"
+              fill="#0C1828" stroke="#29B6F6" stroke-width="1"/>
+        <text x="390" y="95" text-anchor="middle" fill="#4A6070"
+              font-size="8" font-family="ui-monospace, monospace">39 API ROUTES: /diagnosis · /placement · /lessons · /writing · /speaking · /mock-test · /practice</text>
+      </g>
+
+      <!-- Exam badges (right side, top) -->
+      <text x="730" y="28" fill="#EF5350" font-size="7.5" font-weight="700"
+            letter-spacing="0.12em" font-family="system-ui" opacity="0.5">EXAM PREP</text>
+      <g>
+        <rect x="730" y="38" width="145" height="70" rx="5"
+              fill="#140A0A" stroke="#EF5350" stroke-width="1" opacity="0.5"/>
+        <text x="802" y="58" text-anchor="middle" fill="#EF5350" font-size="10" font-weight="600" font-family="system-ui">IELTS</text>
+        <text x="802" y="74" text-anchor="middle" fill="#FFB300" font-size="10" font-weight="600" font-family="system-ui">PTE</text>
+        <text x="802" y="90" text-anchor="middle" fill="#26A69A" font-size="10" font-weight="600" font-family="system-ui">OET</text>
+        <text x="802" y="104" text-anchor="middle" fill="#4A6070" font-size="7" font-family="ui-monospace, monospace">4 rubric systems</text>
+      </g>
+
+      <!-- === DIAGNOSIS LAYER === -->
+      <g class="node">
+        <title>CEFR Diagnostic Engine: multi-attribute analysis, A1-C2 classification per skill domain</title>
+        <rect x="50" y="140" width="210" height="56" rx="5"
+              fill="#10082A" stroke="#7C4DFF" stroke-width="1.4"/>
+        <text x="155" y="162" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Diagnostic Engine</text>
+        <text x="155" y="177" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">attribute extraction</text>
+        <text x="155" y="190" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">CEFR classification (A1–C2)</text>
+      </g>
+
+      <g class="node">
+        <title>Adaptive Placement Test: IRT-based item selection, 15-20 items to accurate placement</title>
+        <rect x="280" y="140" width="195" height="56" rx="5"
+              fill="#10082A" stroke="#7C4DFF" stroke-width="1.4"/>
+        <text x="377" y="162" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Placement Test</text>
+        <text x="377" y="177" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">IRT adaptive algorithm</text>
+        <text x="377" y="190" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">15–20 items → CEFR level</text>
+      </g>
+
+      <g class="node">
+        <title>Gap Analysis + Learning Plan: compare profile vs target, generate prioritized plan</title>
+        <rect x="495" y="140" width="195" height="56" rx="5"
+              fill="#10082A" stroke="#7C4DFF" stroke-width="1.4"/>
+        <text x="592" y="162" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Gap Analysis</text>
+        <text x="592" y="177" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">profile vs target</text>
+        <text x="592" y="190" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">prioritized learning plan</text>
+      </g>
+
+      <!-- Skill Graph (right side, diagnosis row) -->
+      <g class="node">
+        <title>CEFR Skill Graph: directed acyclic graph of competencies, prerequisite dependencies, level validation</title>
+        <rect x="730" y="134" width="145" height="68" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.4"/>
+        <text x="802" y="156" text-anchor="middle" fill="#E8EEF4"
+              font-size="10.5" font-weight="600" font-family="system-ui">Skill Graph</text>
+        <text x="802" y="171" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">CEFR DAG</text>
+        <text x="802" y="184" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">prerequisites</text>
+        <text x="802" y="197" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">level validation</text>
+      </g>
+
+      <!-- === LEARNING LAYER === -->
+      <!-- Sequencer -->
+      <g class="node">
+        <title>Adaptive Sequencer: eligibility check, gap priority, decay urgency, difficulty calibration, variety mixing</title>
+        <rect x="50" y="260" width="210" height="56" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.4"/>
+        <text x="155" y="282" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Adaptive Sequencer</text>
+        <text x="155" y="297" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">eligibility · gap priority</text>
+        <text x="155" y="310" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">decay urgency · i+1 difficulty</text>
+      </g>
+
+      <!-- Writing Assessment -->
+      <g class="node">
+        <title>Writing Assessment: 4 rubric systems (General/IELTS/PTE/OET), AI scoring, feedback gates, validation</title>
+        <rect x="280" y="260" width="195" height="56" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.4"/>
+        <text x="377" y="282" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Writing Assessment</text>
+        <text x="377" y="297" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">4 rubric systems · AI scoring</text>
+        <text x="377" y="310" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">feedback gates · validation</text>
+      </g>
+
+      <!-- Speaking Assessment -->
+      <g class="node">
+        <title>Speaking Assessment: STT transcription, pronunciation features, exam rubric scoring, fluency analysis</title>
+        <rect x="495" y="260" width="195" height="56" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.4"/>
+        <text x="592" y="282" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Speaking Assessment</text>
+        <text x="592" y="297" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">STT · pronunciation features</text>
+        <text x="592" y="310" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">exam rubric scoring</text>
+      </g>
+
+      <!-- Mock Test -->
+      <g class="node">
+        <title>Mock Test Engine: full-length exam simulations for IELTS, PTE, OET with timed sections</title>
+        <rect x="730" y="260" width="145" height="56" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.4"/>
+        <text x="802" y="282" text-anchor="middle" fill="#E8EEF4"
+              font-size="10.5" font-weight="600" font-family="system-ui">Mock Tests</text>
+        <text x="802" y="297" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">IELTS · PTE · OET</text>
+        <text x="802" y="310" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">full exam simulation</text>
+      </g>
+
+      <!-- Content Engine -->
+      <g class="node">
+        <title>Content Engine: item bank, content ingestion, AI generation, lesson publishing, vocabulary profiler</title>
+        <rect x="50" y="370" width="330" height="56" rx="5"
+              fill="#081A18" stroke="#26A69A" stroke-width="1.3"/>
+        <text x="215" y="392" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Content Engine</text>
+        <text x="215" y="407" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">item bank · ingest · publish · 264 lessons</text>
+        <text x="215" y="420" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">vocabulary profiler · lemma analysis</text>
+      </g>
+
+      <!-- AI Generation -->
+      <g class="node">
+        <title>AI Generation: Gemini-powered lesson creation, constraint system, provider abstraction</title>
+        <rect x="400" y="370" width="195" height="56" rx="5"
+              fill="#141008" stroke="#FFB300" stroke-width="1.3"/>
+        <text x="497" y="392" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">AI Generation</text>
+        <text x="497" y="407" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">Gemini · constraints</text>
+        <text x="497" y="420" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">lesson + exercise creation</text>
+      </g>
+
+      <!-- Gamification -->
+      <g class="node">
+        <title>Gamification: XP system, daily streaks, achievements, motivation mechanics</title>
+        <rect x="615" y="370" width="145" height="56" rx="5"
+              fill="#0C1828" stroke="#29B6F6" stroke-width="1.3"/>
+        <text x="687" y="392" text-anchor="middle" fill="#E8EEF4"
+              font-size="10.5" font-weight="600" font-family="system-ui">Gamification</text>
+        <text x="687" y="407" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">XP · streaks</text>
+        <text x="687" y="420" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">achievements</text>
+      </g>
+
+      <!-- TTS -->
+      <g class="node">
+        <title>Text-to-Speech: listening exercise audio generation</title>
+        <rect x="780" y="370" width="100" height="56" rx="5"
+              fill="#0C1828" stroke="#29B6F6" stroke-width="1.3"/>
+        <text x="830" y="392" text-anchor="middle" fill="#E8EEF4"
+              font-size="10.5" font-weight="600" font-family="system-ui">TTS</text>
+        <text x="830" y="407" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">listening</text>
+        <text x="830" y="420" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">audio gen</text>
+      </g>
+
+      <!-- === MASTERY LAYER === -->
+      <g class="node">
+        <title>Mastery Engine: exponential decay model, spaced repetition scheduling, mastery state per skill</title>
+        <rect x="50" y="480" width="280" height="56" rx="5"
+              fill="#141008" stroke="#FFB300" stroke-width="1.4"/>
+        <text x="190" y="502" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Mastery Engine</text>
+        <text x="190" y="517" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">exponential decay · spaced repetition</text>
+        <text x="190" y="530" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">mastery state per skill · review scheduling</text>
+      </g>
+
+      <g class="node">
+        <title>Progress Tracking: lesson completions, skill history, score trends, time-on-task</title>
+        <rect x="350" y="480" width="210" height="56" rx="5"
+              fill="#141008" stroke="#FFB300" stroke-width="1.4"/>
+        <text x="455" y="502" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Progress Tracker</text>
+        <text x="455" y="517" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">completions · score trends</text>
+        <text x="455" y="530" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">skill history · analytics</text>
+      </g>
+
+      <g class="node">
+        <title>Learner Profiler: vocabulary inventory, lemma frequency analysis, reading level estimation</title>
+        <rect x="580" y="480" width="195" height="56" rx="5"
+              fill="#141008" stroke="#FFB300" stroke-width="1.4"/>
+        <text x="677" y="502" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="600" font-family="system-ui">Learner Profiler</text>
+        <text x="677" y="517" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">vocabulary inventory</text>
+        <text x="677" y="530" text-anchor="middle" fill="#4A6070"
+              font-size="7.5" font-family="ui-monospace, monospace">lemma analysis · read level</text>
+      </g>
+
+      <!-- === DATA LAYER === -->
+      <g class="node">
+        <title>Data Layer: Drizzle ORM, SQLite/Turso, 42 tables, 7 migrations, Better Auth, Paddle, Resend, PostHog</title>
+        <rect x="50" y="595" width="730" height="48" rx="6"
+              fill="#140808" stroke="#EF5350" stroke-width="1.4"/>
+        <text x="415" y="616" text-anchor="middle" fill="#E8EEF4"
+              font-size="11" font-weight="700" font-family="system-ui">DATA LAYER</text>
+        <text x="415" y="633" text-anchor="middle" fill="#4A6070"
+              font-size="8" font-family="ui-monospace, monospace">Drizzle ORM · SQLite/Turso · 42 tables · 7 migrations · Better Auth · Paddle · Resend · PostHog</text>
+      </g>
+
+      <!-- Deployment bar -->
+      <rect x="50" y="660" width="730" height="26" rx="4"
+            fill="#0A0A14" stroke="#1A2838" stroke-width="0.8"/>
+      <text x="415" y="677" text-anchor="middle" fill="#4A6070" font-size="7.5"
+            font-family="ui-monospace, monospace">DEPLOY: Vercel (serverless) · Turso (distributed SQLite) · 1,100+ Vitest tests</text>
+
+      <!-- === CONNECTIONS === -->
+      <!-- Dashboard to API -->
+      <path d="M390,58 V75" stroke="#1A2838" stroke-width="1.2" fill="none" class="flow-dash"/>
+
+      <!-- API to diagnosis layer -->
+      <path d="M390,107 V125" stroke="#1A2838" stroke-width="1" fill="none" opacity="0.4"/>
+      <path d="M155,125 H592" stroke="#1A2838" stroke-width="0.8" fill="none" opacity="0.25"/>
+      <path d="M155,125 V140 M377,125 V140 M592,125 V140"
+            stroke="#1A2838" stroke-width="1.2" fill="none" class="flow-dash"/>
+
+      <!-- Skill graph connections to diagnosis -->
+      <path d="M730,168 H690" stroke="#26A69A" stroke-width="0.8" fill="none" stroke-dasharray="3 3" opacity="0.35"/>
+
+      <!-- Diagnosis to learning layer -->
+      <path d="M155,196 V230 M377,196 V230 M592,196 V230"
+            stroke="#1A2838" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M155,230 H802" stroke="#1A2838" stroke-width="0.8" fill="none" opacity="0.25"/>
+      <path d="M155,230 V260 M377,230 V260 M592,230 V260 M802,230 V260"
+            stroke="#1A2838" stroke-width="1.2" fill="none" class="flow-dash"/>
+
+      <!-- Skill graph to sequencer -->
+      <path d="M730,180 Q710,240 260,275" stroke="#26A69A" stroke-width="0.8" fill="none" stroke-dasharray="3 3" opacity="0.3"/>
+
+      <!-- Learning to content row -->
+      <path d="M155,316 V350 M377,316 V350 M592,316 V350"
+            stroke="#1A2838" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M155,350 H830" stroke="#1A2838" stroke-width="0.8" fill="none" opacity="0.2"/>
+      <path d="M215,350 V370 M497,350 V370 M687,350 V370 M830,350 V370"
+            stroke="#1A2838" stroke-width="1.2" fill="none" class="flow-dash"/>
+
+      <!-- Content to mastery layer -->
+      <path d="M215,426 V460 M497,426 V460"
+            stroke="#1A2838" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M190,460 H677" stroke="#1A2838" stroke-width="0.8" fill="none" opacity="0.2"/>
+      <path d="M190,460 V480 M455,460 V480 M677,460 V480"
+            stroke="#1A2838" stroke-width="1.2" fill="none" class="flow-dash"/>
+
+      <!-- Mastery to data layer -->
+      <path d="M190,536 V575 M455,536 V575 M677,536 V575"
+            stroke="#1A2838" stroke-width="1" fill="none" opacity="0.3"/>
+
+      <!-- Mastery feedback loop to sequencer -->
+      <path d="M50,508 H35 V288 H50" stroke="#FFB300" stroke-width="1" stroke-dasharray="4 3" fill="none" opacity="0.3"/>
+      <text transform="rotate(-90,40,400)" x="40" y="400" text-anchor="middle"
+            fill="#FFB300" font-size="6.5" font-family="ui-monospace, monospace" opacity="0.35">DECAY → REVIEW</text>
+
+      <!-- Skill graph feedback from mastery -->
+      <path d="M775,508 H810 V202 H875" stroke="#FFB300" stroke-width="0.8" stroke-dasharray="3 3" fill="none" opacity="0.25"/>
+
+      <!-- External services panel -->
+      <text x="820" y="475" fill="#29B6F6" font-size="7.5" font-weight="700"
+            letter-spacing="0.12em" font-family="system-ui" opacity="0.45">SERVICES</text>
+      <g>
+        <rect x="820" y="487" width="140" height="150" rx="5"
+              fill="#0C1828" stroke="#29B6F6" stroke-width="1" opacity="0.4"/>
+        <text x="890" y="507" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">Gemini AI</text>
+        <text x="890" y="525" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">Better Auth</text>
+        <text x="890" y="543" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">Paddle Billing</text>
+        <text x="890" y="561" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">Resend Email</text>
+        <text x="890" y="579" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">PostHog</text>
+        <text x="890" y="597" text-anchor="middle" fill="#A8B8C8" font-size="9" font-family="ui-monospace, monospace">STT Provider</text>
+        <text x="890" y="627" text-anchor="middle" fill="#4A6070" font-size="7.5" font-family="ui-monospace, monospace">6 integrations</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <div class="cefr-bar">
+    <span class="cefr-label">CEFR LEVELS</span>
+    <span class="cefr-item cefr-a">A1 Beginner</span>
+    <span class="cefr-arrow">&#x2192;</span>
+    <span class="cefr-item cefr-a">A2 Elementary</span>
+    <span class="cefr-arrow">&#x2192;</span>
+    <span class="cefr-item cefr-b">B1 Intermediate</span>
+    <span class="cefr-arrow">&#x2192;</span>
+    <span class="cefr-item cefr-b">B2 Upper-Int</span>
+    <span class="cefr-arrow">&#x2192;</span>
+    <span class="cefr-item cefr-c">C1 Advanced</span>
+    <span class="cefr-arrow">&#x2192;</span>
+    <span class="cefr-item cefr-c">C2 Mastery</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-val">82,000+</span><span class="stat-lbl">Lines of TypeScript</span></div>
+    <div class="stat"><span class="stat-val">483</span><span class="stat-lbl">Source Files</span></div>
+    <div class="stat"><span class="stat-val">39</span><span class="stat-lbl">API Routes</span></div>
+    <div class="stat"><span class="stat-val">42</span><span class="stat-lbl">DB Tables</span></div>
+    <div class="stat"><span class="stat-val">1,100+</span><span class="stat-lbl">Tests Passing</span></div>
+    <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">Rubric Systems</span></div>
+    <div class="stat"><span class="stat-val">264</span><span class="stat-lbl">Lessons</span></div>
+    <div class="stat"><span class="stat-val">6</span><span class="stat-lbl">CEFR Levels</span></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#29B6F6"></span>Interface</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#7C4DFF"></span>Diagnosis</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#26A69A"></span>Learning</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FFB300"></span>Mastery & AI</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#EF5350"></span>Data Layer</div>
+  </div>
+
+  <p class="footer">FluentPath &middot; github.com/Leo-emp/Fluentpath</p>
+</div>
