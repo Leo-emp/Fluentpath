@@ -8,56 +8,161 @@ Built as a production-grade Next.js application: **82,000+ lines of TypeScript**
 
 ## Architecture
 
+```mermaid
+graph TB
+    subgraph UI["LEARNER DASHBOARD"]
+        LD[Skill graph · Lessons · Progress<br/>Streaks · Achievements · Mock tests]
+    end
+
+    subgraph API["39 API ROUTES"]
+        DG[/diagnosis · /placement]
+        LS[/lessons · /lesson-completions]
+        WR[/writing · /speaking]
+        PR[/practice · /progress]
+        GM[/mock-test · /gamification]
+    end
+
+    subgraph Diagnosis["DIAGNOSIS ENGINE"]
+        CE[CEFR Classifier<br/>A1–C2 per skill]
+        AE[Attribute Engine<br/>Vocab · Grammar · Cohesion]
+        GA[Gap Analysis<br/>Target vs current]
+        LP[Learning Plan<br/>Priority + scheduling]
+    end
+
+    subgraph Sequencer["ADAPTIVE SEQUENCER"]
+        EL[Eligibility Check<br/>Prerequisite validation]
+        DF[Difficulty Calibration<br/>i+1 principle]
+        SP[Session Planner<br/>Variety + gap priority]
+    end
+
+    subgraph Assessment["ASSESSMENT ENGINE"]
+        WA[Writing Rubrics<br/>General · IELTS · PTE · OET]
+        SA[Speaking Rubrics<br/>STT + pronunciation]
+        FG[Feedback Gates<br/>Consistency · specificity<br/>· actionability validation]
+        AI[Gemini AI<br/>Scoring + generation]
+    end
+
+    subgraph Learning["MASTERY LAYER"]
+        SG[Skill Graph DAG<br/>CEFR competency map<br/>prerequisite edges]
+        MD[Mastery Decay<br/>Exponential model<br/>per-skill decay constants]
+        SR[Spaced Repetition<br/>Optimal review scheduling]
+    end
+
+    subgraph Content["CONTENT ENGINE"]
+        IB[Item Bank<br/>264 writing + speaking lessons]
+        CG[AI Generation<br/>Level-constrained exercises]
+        PT[Placement Test<br/>IRT adaptive · 15-20 items]
+    end
+
+    subgraph Data["DATA LAYER"]
+        DB[(Drizzle ORM<br/>SQLite / Turso<br/>42 tables)]
+        AU[Better Auth<br/>Email + social]
+        PD[Paddle Billing]
+        RS[Resend · PostHog]
+    end
+
+    UI --> API
+    API --> Diagnosis & Sequencer & Assessment
+    Diagnosis --> Learning
+    Sequencer --> Learning & Content
+    Assessment --> AI
+    AI --> FG
+    Learning --> Data
+    Content --> Data
+
+    style Diagnosis fill:#1a1a2e,stroke:#2DD4BF,color:#fff
+    style Assessment fill:#1a1a2e,stroke:#A78BFA,color:#fff
+    style Learning fill:#1a1a2e,stroke:#F59E0B,color:#fff
+    style Sequencer fill:#1a1a2e,stroke:#F472B6,color:#fff
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    LEARNER DASHBOARD                          │
-│  Skill graph · Lessons · Progress · Streaks · Achievements   │
-└────────────────────────────┬─────────────────────────────────┘
-                             │
-┌────────────────────────────┼─────────────────────────────────┐
-│                     39 API ROUTES                             │
-│  /diagnosis · /lessons · /placement · /speaking · /writing   │
-│  /practice · /progress · /mock-test · /gamification          │
-└────────────────────────────┬─────────────────────────────────┘
-                             │
-    ┌────────────────────────┼──────────────────────────┐
-    │                        │                          │
-    ▼                        ▼                          ▼
-┌──────────────────┐  ┌──────────────┐  ┌─────────────────────┐
-│  DIAGNOSIS       │  │  SEQUENCER   │  │  ASSESSMENT         │
-│                  │  │              │  │                     │
-│ CEFR classifier  │  │ Eligibility  │  │ Writing rubrics     │
-│ Attribute engine │  │ Session plan │  │ Speaking rubrics     │
-│ Skill projection │  │ Level select │  │ IELTS/PTE/OET       │
-│ Gap analysis     │  │ Adaptive     │  │ AI scoring           │
-│ Learning plan    │  │ Difficulty   │  │ Feedback gates       │
-└──────────────────┘  └──────────────┘  └─────────────────────┘
-        │                    │                      │
-        ▼                    ▼                      ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    CONTENT ENGINE                             │
-│  Item bank · Content ingest · Lesson generation · Profiler   │
-│  264 writing+speaking lessons · Vocabulary inventories       │
-└────────────────────────────┬─────────────────────────────────┘
-                             │
-    ┌────────────────────────┼──────────────────────────┐
-    │                        │                          │
-    ▼                        ▼                          ▼
-┌──────────────────┐  ┌──────────────┐  ┌─────────────────────┐
-│  SKILL GRAPH     │  │  MASTERY     │  │  GAMIFICATION       │
-│                  │  │              │  │                     │
-│ CEFR skill map   │  │ Decay model  │  │ XP system           │
-│ Dependency tree  │  │ Spaced rep   │  │ Streaks             │
-│ Level validation │  │ Update rules │  │ Achievements        │
-└──────────────────┘  └──────────────┘  └─────────────────────┘
-        │
-        ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    DATA LAYER                                 │
-│  Drizzle ORM · SQLite/Turso · 42 tables · 7 migrations      │
-│  Better Auth · Paddle billing · Resend email · PostHog       │
-└──────────────────────────────────────────────────────────────┘
-```
+
+## Problem Statement
+
+English language learning platforms face a fundamental trade-off: generic content is scalable but ineffective, while personalized instruction is effective but doesn't scale. Most platforms offer a fixed curriculum where every learner follows the same path regardless of their starting level, existing strengths, or target exam.
+
+Three technical challenges make adaptive language learning harder than general adaptive education:
+
+1. **Multi-dimensional proficiency** — Language competence isn't a single score. A learner might be B2 in reading but A2 in speaking. Diagnosis must map each skill independently across the 6 CEFR levels (A1–C2), producing a multi-dimensional profile rather than a single placement.
+2. **Skill decay** — Unlike math or programming, language skills degrade without practice. A learner who reached B1 listening three months ago may have decayed to A2. The system must model decay and schedule reviews at the right intervals.
+3. **Exam-specific scoring** — IELTS, PTE, and OET each use different scoring rubrics for writing and speaking. An AI scoring system must implement each rubric faithfully, not approximate with a generic "good/bad" signal.
+
+---
+
+## Technical Deep Dive
+
+### CEFR Diagnostic Engine
+
+The diagnostic module classifies learner proficiency across multiple language domains using a multi-attribute analysis pipeline:
+
+**Stage 1 — Attribute Extraction:** Raw learner responses are decomposed into measurable attributes: vocabulary range, grammatical accuracy, cohesion, task achievement, pronunciation features (for speaking), and argument development.
+
+**Stage 2 — CEFR Classification:** Each attribute is mapped to a CEFR level (A1–C2) using band descriptors derived from the official CEFR framework. The classifier handles the common case where a learner performs at different levels on different attributes — a B1 vocabulary range with A2 grammatical accuracy produces a split-level profile, not a blended score.
+
+**Stage 3 — Gap Analysis:** The diagnosed profile is compared against the learner's target (general improvement, IELTS band 7, PTE 79+, OET B grade). The gap analysis identifies which skills need the most work and in what order, considering prerequisite dependencies in the skill graph.
+
+**Stage 4 — Learning Plan:** The gap analysis feeds into a structured plan: which skills to prioritize, what lesson types to use, and how many practice sessions are needed to reach the target. The plan updates dynamically as the learner progresses.
+
+### Skill Graph
+
+Language competencies form a directed acyclic graph where each node is a CEFR-aligned skill and edges represent prerequisites:
+
+- **Level validation** — A learner cannot attempt C1 writing tasks without demonstrating B2 cohesion and B2 argument structure
+- **Cross-skill dependencies** — Speaking assessment at B2+ requires B2 vocabulary, because a learner cannot demonstrate fluency without sufficient lexical range
+- **Progression rules** — Mastery at one level unlocks the next level's skills in the same domain, but only when prerequisites from other domains are also satisfied
+
+### Mastery and Spaced Repetition
+
+The mastery module models each learner's skill state as a combination of demonstrated level and decay:
+
+**Mastery State:** Each skill carries a mastery score, a timestamp, and a decay constant. The decay constant is calibrated per skill — vocabulary decays faster than grammar rules, and productive skills (writing, speaking) decay faster than receptive skills (reading, listening).
+
+**Decay Model:** Mastery decays exponentially from the last practice timestamp. A skill mastered to 0.9 three weeks ago with a decay constant of 0.05/day is now at approximately 0.32 — below the threshold for "retained" and scheduled for review.
+
+**Update Rules:** When a learner practices a skill and demonstrates mastery, the mastery score increases and the decay constant decreases (the skill becomes more durable). Repeated successful reviews make a skill increasingly resistant to decay.
+
+### Adaptive Sequencer
+
+The sequencer assembles personalized lesson sessions by selecting from the item bank based on multiple constraints:
+
+1. **Eligibility** — Only lessons whose prerequisite skills are mastered (per the skill graph) are candidates
+2. **Gap priority** — Lessons targeting the learner's weakest skills are weighted higher
+3. **Decay urgency** — Skills approaching the decay threshold are prioritized for review
+4. **Difficulty calibration** — Lesson difficulty matched to current level with slight upward pressure (i+1 principle)
+5. **Variety** — Avoids repeating the same skill type in consecutive lessons
+
+### Writing Assessment
+
+The writing module implements 4 independent rubric systems:
+
+| Rubric | Criteria | Scale |
+|--------|----------|-------|
+| **General** | Task achievement, coherence, vocabulary, grammar | 1–10 |
+| **IELTS** | Task response, coherence/cohesion, lexical resource, grammatical range | Band 0–9 |
+| **PTE** | Content, form, grammar, vocabulary, spelling | 10–90 |
+| **OET** | Purpose, content, tone, layout, grammar, vocabulary | A–E |
+
+Each rubric is a separate module with its own scoring logic. The AI assessment pipeline works in two stages:
+
+**Pass 1 — Scoring:** The learner's writing is evaluated against the selected rubric's criteria. The prompt includes the specific band descriptors so the AI applies the exam's actual standards.
+
+**Pass 2 — Feedback Gates:** Before feedback is returned, validation gates check: (a) scores are internally consistent, (b) feedback references specific passages from the learner's writing, and (c) improvement suggestions are actionable and level-appropriate.
+
+### Speaking Assessment
+
+Speaking assessment combines speech-to-text transcription with rubric-based scoring. The system abstracts the STT provider behind an interface, allowing different engines to be swapped without changing assessment logic. Beyond transcription, the system extracts pronunciation features — hesitation patterns, intonation contours, and phoneme accuracy — which feed into exam-specific speaking rubrics.
+
+### Adaptive Placement Test
+
+For learners who skip the full diagnostic, the placement test uses an adaptive algorithm inspired by Item Response Theory (IRT):
+
+1. Start at B1 (mid-range) difficulty
+2. Correct answer → increase difficulty; incorrect → decrease
+3. Continue until the confidence interval narrows below a threshold
+4. Map estimated ability to a CEFR level per skill tested
+
+This typically requires 15–20 items to place a learner accurately, versus 40+ in a fixed diagnostic.
+
+---
 
 ## AI/ML Techniques
 
@@ -71,23 +176,6 @@ Built as a production-grade Next.js application: **82,000+ lines of TypeScript**
 | 6 | **Adaptive Sequencer** | Eligibility + difficulty + gap analysis | Generate personalized lesson sequences per learner |
 | 7 | **Content Generation** | AI-powered lesson and exercise creation | Scale content across 6 CEFR levels and 3 exam types |
 | 8 | **Skill Graph Engine** | Dependency-aware CEFR competency map | Track and validate prerequisite mastery chains |
-
-## Core Modules
-
-| Module | Files | Purpose |
-|--------|-------|---------|
-| `diagnosis/` | 7 | CEFR classification, attribute analysis, gap detection, learning plans |
-| `skill-graph/` | 3 | CEFR competency map, dependency validation, level progression |
-| `mastery/` | 5 | Spaced repetition, decay modeling, mastery state management |
-| `sequencer/` | 6 | Lesson selection, session assembly, difficulty adaptation |
-| `writing/` | 13 | Writing tasks, rubrics (IELTS/PTE/OET), AI scoring, feedback gates |
-| `speaking/` | 8 | Speaking tasks, STT provider, pronunciation assessment, rubrics |
-| `placement/` | 3 | Adaptive placement test, item selection, score calculation |
-| `content/` | 6 | Item bank, content ingestion, publishing, statistics |
-| `generation/` | 3 | AI lesson generation, constraint system, provider abstraction |
-| `profiler/` | 3 | Learner profiling, vocabulary inventory, lemma analysis |
-| `gamification/` | 2 | XP system, streak tracking |
-| `mock-test/` | — | Full-length practice exams (IELTS, PTE, OET) |
 
 ## Exam Preparation
 
@@ -125,15 +213,12 @@ fluentpath/                         # 82,000+ lines of TypeScript
 │   │   │   ├── diagnosis/          # CEFR diagnostic endpoints
 │   │   │   ├── placement/          # Adaptive placement test
 │   │   │   ├── lessons/            # Lesson CRUD + sequencing
-│   │   │   ├── lesson-completions/ # Progress tracking
 │   │   │   ├── writing/            # Writing submission + scoring
 │   │   │   ├── speaking/           # Speaking assessment + STT
 │   │   │   ├── mock-test/          # Full exam simulations
 │   │   │   ├── practice/           # Skill practice sessions
 │   │   │   ├── progress/           # Learner progress queries
 │   │   │   ├── gamification/       # XP + streaks + achievements
-│   │   │   ├── tts/                # Text-to-speech generation
-│   │   │   ├── subscribe/          # Paddle billing webhooks
 │   │   │   └── admin/              # Admin content management
 │   │   └── page.tsx                # Learner dashboard
 │   ├── components/                 # 41 React components
@@ -173,7 +258,6 @@ fluentpath/                         # 82,000+ lines of TypeScript
 | Test files | 109 |
 | Passing tests | 1,100+ |
 | Writing rubrics | 4 systems (general, IELTS, PTE, OET) |
-| Speaking features | STT + rubric scoring + pronunciation |
 | Content lessons | 264 (writing + speaking) |
 | CEFR levels | 6 (A1–C2) |
 
@@ -189,6 +273,13 @@ fluentpath/                         # 82,000+ lines of TypeScript
 
 **Why 1,100+ tests?** An adaptive learning platform where incorrect scoring damages learner outcomes. Every rubric, scoring algorithm, diagnostic classifier, and sequencing rule is tested to prevent regressions that could misdiagnose a learner's level or score an exam task incorrectly.
 
+## Future Work
+
+- **Reading and listening content** — Expand the item bank to cover all 6 language skills with full CEFR coverage
+- **Real-time speaking practice** — Live conversation mode with AI interlocutor for fluency development
+- **Cohort analytics** — Dashboard for language schools and bootcamps tracking class-wide progress
+- **Predictive scoring** — Use historical mastery data to predict exam scores before the learner sits the test
+
 ## Setup
 
 ```bash
@@ -197,7 +288,6 @@ cd Fluentpath
 
 npm install
 
-# Configure environment
 cp .env.example .env
 # Add: DATABASE_URL, GEMINI_API_KEY, BETTER_AUTH_SECRET
 # Add: PADDLE_API_KEY, RESEND_API_KEY, POSTHOG_KEY
