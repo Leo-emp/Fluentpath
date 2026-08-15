@@ -442,5 +442,82 @@ svg.arch { display: block; width: 100%; min-width: 780px; height: auto; }
     <div class="legend-item"><span class="legend-dot" style="background:#EF5350"></span>Data Layer</div>
   </div>
 
+  <style>
+    .justifications { margin-top: 2rem; border-top: 1px solid #1A2838; padding-top: 1.5rem; }
+    .justifications h2 { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; color: var(--teal); margin-bottom: 1rem; }
+    .just-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    .just-card { background: var(--surface); border: 1px solid #1A2838; border-radius: 6px; padding: 0.85rem 1rem; }
+    .just-card h3 { font-size: 0.8rem; font-weight: 600; color: var(--text-bright); margin-bottom: 0.3rem; }
+    .just-card .tech { font-size: 0.65rem; color: var(--teal); font-family: ui-monospace, monospace; margin-bottom: 0.4rem; }
+    .just-card p { font-size: 0.72rem; line-height: 1.55; color: var(--text); }
+    .just-card .alt { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.35rem; font-style: italic; }
+  </style>
+
+  <div class="justifications">
+    <h2>TECHNOLOGY JUSTIFICATIONS</h2>
+    <div class="just-grid">
+      <div class="just-card">
+        <h3>CEFR Skill Graph (DAG)</h3>
+        <div class="tech">Core Architecture</div>
+        <p>Language proficiency is not a single dimension — a learner can be B2 in reading but A2 in speaking. The directed acyclic graph models each CEFR competency as a node with prerequisite edges. This prevents the sequencer from assigning C1 writing tasks to a learner who hasn't mastered B2 cohesion. The graph is the structural backbone: every diagnostic, sequencing, and assessment decision references it.</p>
+        <p class="alt">Rejected: linear curriculum (ignores multi-dimensional proficiency), flat tags (no prerequisite enforcement), single score (masks skill gaps)</p>
+      </div>
+      <div class="just-card">
+        <h3>Exponential Mastery Decay</h3>
+        <div class="tech">Spaced Repetition</div>
+        <p>Language skills degrade without practice — unlike math, where a learned formula stays learned. The decay model tracks mastery score, timestamp, and per-skill decay constant (vocabulary decays faster than grammar). Repeated successful reviews decrease the decay constant, making skills more durable over time. This implements the core spaced repetition principle at the individual skill level.</p>
+        <p class="alt">Rejected: no decay (learners appear "done" forever), fixed intervals (ignores skill-specific forgetting curves), SM-2 (designed for flashcards, not multi-skill curricula)</p>
+      </div>
+      <div class="just-card">
+        <h3>4 Independent Rubric Systems</h3>
+        <div class="tech">Exam Assessment</div>
+        <p>IELTS uses band descriptors (0-9), PTE uses communicative skills scoring (10-90), OET uses healthcare-specific criteria (A-E). A generic "good/bad" assessment is useless for exam preparation — learners need scores against the exact rubric their exam uses. Each rubric is a separate module with distinct scoring logic, band descriptors, and feedback patterns.</p>
+        <p class="alt">Rejected: single rubric (inaccurate for exam prep), generic AI scoring (no exam alignment), human grading (doesn't scale)</p>
+      </div>
+      <div class="just-card">
+        <h3>Adaptive Placement (IRT)</h3>
+        <div class="tech">Assessment Algorithm</div>
+        <p>Item Response Theory starts at B1 difficulty and adapts based on responses — correct answers increase difficulty, incorrect answers decrease it. This converges on accurate CEFR placement in 15-20 items versus 40+ in a fixed diagnostic. The confidence interval narrows with each response, and testing stops when precision is sufficient.</p>
+        <p class="alt">Rejected: fixed-length test (wastes user time), self-assessment (inaccurate), skip placement (poor initial experience)</p>
+      </div>
+      <div class="just-card">
+        <h3>Drizzle ORM + SQLite/Turso</h3>
+        <div class="tech">Database (42 Tables)</div>
+        <p>Drizzle provides type-safe queries with zero runtime overhead — the ORM generates raw SQL at build time. SQLite on Turso delivers global read replication with single-writer simplicity. 42 tables model the full learning domain: users, lessons, completions, mastery states, skill graph nodes, diagnostics, writing submissions, speaking recordings, and gamification.</p>
+        <p class="alt">Rejected: Prisma (heavier runtime), Postgres (connection pooling complexity), MongoDB (relational data needs relational DB)</p>
+      </div>
+      <div class="just-card">
+        <h3>Gemini AI</h3>
+        <div class="tech">Assessment + Generation</div>
+        <p>Gemini handles two distinct tasks: scoring writing/speaking against exam rubrics (with full band descriptor tables in the prompt), and generating new lessons within CEFR level constraints. The long context window accommodates detailed rubric injection. Cost-effective at the volume needed for per-submission scoring across thousands of learners.</p>
+        <p class="alt">Rejected: GPT-4 (cost prohibitive for per-submission scoring), fine-tuned model (rubrics change per exam), rule-based scoring (can't evaluate open-ended writing)</p>
+      </div>
+      <div class="just-card">
+        <h3>Feedback Gates</h3>
+        <div class="tech">AI Quality Control</div>
+        <p>Before AI feedback reaches the learner, validation gates check: scores are internally consistent, feedback references specific passages from the learner's text, and suggestions are actionable at the learner's current level. This prevents generic, unhelpful feedback that would damage trust in the platform's assessment quality.</p>
+        <p class="alt">Rejected: raw AI output (inconsistent quality), human review (doesn't scale), no validation (risks incorrect scoring)</p>
+      </div>
+      <div class="just-card">
+        <h3>Better Auth</h3>
+        <div class="tech">Authentication</div>
+        <p>Self-hosted auth with email + social login, session management, and password reset. Framework-agnostic with database adapters. For an education platform handling learner data, self-hosted auth eliminates compliance complexity of third-party providers and avoids per-MAU pricing that scales badly for education.</p>
+        <p class="alt">Rejected: Clerk/Auth0 (per-MAU pricing), NextAuth v5 (stability), custom auth (security risk)</p>
+      </div>
+      <div class="just-card">
+        <h3>1,100+ Vitest Tests</h3>
+        <div class="tech">Testing Strategy</div>
+        <p>Incorrect scoring damages learner outcomes — every rubric algorithm, diagnostic classifier, mastery decay calculation, and sequencing rule is tested. Vitest runs 1,100+ tests in 27 seconds — fast enough for CI on every commit. Test-first development caught 12 scoring edge cases before they reached production.</p>
+        <p class="alt">Rejected: Jest (slower), manual testing (can't cover 4 rubrics x 6 CEFR levels), E2E-only (too slow for scoring logic)</p>
+      </div>
+      <div class="just-card">
+        <h3>Paddle Billing</h3>
+        <div class="tech">Payments</div>
+        <p>Paddle acts as Merchant of Record — handling global tax compliance (VAT, GST, sales tax) automatically across 100+ jurisdictions. For an education platform selling to learners worldwide, this is a regulatory requirement handled out of the box. Webhook-driven subscription management keeps database in sync.</p>
+        <p class="alt">Rejected: Stripe (must handle tax compliance), LemonSqueezy (limited Asian payment methods), self-hosted (tax nightmare)</p>
+      </div>
+    </div>
+  </div>
+
   <p class="footer">FluentPath &middot; github.com/Leo-emp/Fluentpath</p>
 </div>
