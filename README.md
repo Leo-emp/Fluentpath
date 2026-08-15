@@ -9,71 +9,35 @@ Built as a production-grade Next.js application: **82,000+ lines of TypeScript**
 ## Architecture
 
 ```mermaid
-graph TB
-    subgraph UI["LEARNER DASHBOARD"]
-        LD[Skill graph · Lessons · Progress<br/>Streaks · Achievements · Mock tests]
-    end
+graph TD
+    UI[Learner Dashboard] --> API[39 API Routes]
 
-    subgraph API["39 API ROUTES"]
-        DG[/diagnosis · /placement]
-        LS[/lessons · /lesson-completions]
-        WR[/writing · /speaking]
-        PR[/practice · /progress]
-        GM[/mock-test · /gamification]
-    end
+    API --> DIAG[Diagnosis Engine]
+    DIAG --> CEFR[CEFR Classifier - A1 to C2 per skill]
+    DIAG --> GAP[Gap Analysis - target vs current]
+    DIAG --> PLAN[Learning Plan]
 
-    subgraph Diagnosis["DIAGNOSIS ENGINE"]
-        CE[CEFR Classifier<br/>A1–C2 per skill]
-        AE[Attribute Engine<br/>Vocab · Grammar · Cohesion]
-        GA[Gap Analysis<br/>Target vs current]
-        LP[Learning Plan<br/>Priority + scheduling]
-    end
+    API --> SEQ[Adaptive Sequencer]
+    SEQ --> ELIG[Eligibility - prerequisite check]
+    SEQ --> DIFF[Difficulty - i+1 principle]
 
-    subgraph Sequencer["ADAPTIVE SEQUENCER"]
-        EL[Eligibility Check<br/>Prerequisite validation]
-        DF[Difficulty Calibration<br/>i+1 principle]
-        SP[Session Planner<br/>Variety + gap priority]
-    end
+    API --> ASSESS[Assessment Engine]
+    ASSESS --> WR[Writing Rubrics - General, IELTS, PTE, OET]
+    ASSESS --> SP[Speaking Rubrics - STT + pronunciation]
+    ASSESS --> FG[Feedback Gates - consistency validation]
+    ASSESS --> GMAI[Gemini AI - scoring + generation]
 
-    subgraph Assessment["ASSESSMENT ENGINE"]
-        WA[Writing Rubrics<br/>General · IELTS · PTE · OET]
-        SA[Speaking Rubrics<br/>STT + pronunciation]
-        FG[Feedback Gates<br/>Consistency · specificity<br/>· actionability validation]
-        AI[Gemini AI<br/>Scoring + generation]
-    end
+    DIAG --> SG[Skill Graph DAG - CEFR competency map]
+    SEQ --> SG
+    SG --> MD[Mastery Decay - exponential model]
+    MD --> SR[Spaced Repetition]
 
-    subgraph Learning["MASTERY LAYER"]
-        SG[Skill Graph DAG<br/>CEFR competency map<br/>prerequisite edges]
-        MD[Mastery Decay<br/>Exponential model<br/>per-skill decay constants]
-        SR[Spaced Repetition<br/>Optimal review scheduling]
-    end
+    SEQ --> IB[Item Bank - 264 lessons]
+    SEQ --> PT[Placement Test - IRT adaptive]
 
-    subgraph Content["CONTENT ENGINE"]
-        IB[Item Bank<br/>264 writing + speaking lessons]
-        CG[AI Generation<br/>Level-constrained exercises]
-        PT[Placement Test<br/>IRT adaptive · 15-20 items]
-    end
-
-    subgraph Data["DATA LAYER"]
-        DB[(Drizzle ORM<br/>SQLite / Turso<br/>42 tables)]
-        AU[Better Auth<br/>Email + social]
-        PD[Paddle Billing]
-        RS[Resend · PostHog]
-    end
-
-    UI --> API
-    API --> Diagnosis & Sequencer & Assessment
-    Diagnosis --> Learning
-    Sequencer --> Learning & Content
-    Assessment --> AI
-    AI --> FG
-    Learning --> Data
-    Content --> Data
-
-    style Diagnosis fill:#1a1a2e,stroke:#2DD4BF,color:#fff
-    style Assessment fill:#1a1a2e,stroke:#A78BFA,color:#fff
-    style Learning fill:#1a1a2e,stroke:#F59E0B,color:#fff
-    style Sequencer fill:#1a1a2e,stroke:#F472B6,color:#fff
+    SR --> DB[(Drizzle ORM - SQLite/Turso - 42 tables)]
+    IB --> DB
+    API --> AUTH[Better Auth + Paddle + Resend]
 ```
 
 ## Problem Statement
