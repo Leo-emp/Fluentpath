@@ -12,10 +12,10 @@ import { Button } from '@/components/ui/button'
 const NAV_LINKS = [
   { href: '/learning-path', label: 'Path' },
   { href: '/lessons', label: 'Lessons' },
+  { href: '/practice', label: 'Practice' },
+  { href: '/mock-test', label: 'Mock Tests' },
   { href: '/vocabulary', label: 'Vocabulary' },
   { href: '/grammar', label: 'Grammar' },
-  { href: '/phrasal-verbs', label: 'Phrasal Verbs' },
-  { href: '/practice', label: 'Practice' },
   { href: '/community', label: 'Community' },
 ]
 

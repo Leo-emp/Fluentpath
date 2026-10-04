@@ -188,6 +188,76 @@ const TASKS: SpeakingTask[] = [
   },
 
   // =========================================================================
+  // IELTS Speaking — additional tasks for mock test rotation
+  // =========================================================================
+  {
+    id: 'ielts.speaking.part1.2',
+    type: 'short_answer',
+    level: 'B1',
+    exam: 'ielts_speaking',
+    prompt:
+      "Let's talk about food and cooking. Do you enjoy cooking? What kind of food do you like to eat? Is there a traditional dish from your country that you particularly enjoy?",
+    timeLimitSeconds: 60,
+    prepTimeSeconds: null,
+    rubricId: 'ielts_speaking',
+  },
+  {
+    id: 'ielts.speaking.part1.3',
+    type: 'short_answer',
+    level: 'B1',
+    exam: 'ielts_speaking',
+    prompt:
+      "Let's talk about technology. How often do you use your phone? What apps do you use most? Do you think people spend too much time on their phones?",
+    timeLimitSeconds: 60,
+    prepTimeSeconds: null,
+    rubricId: 'ielts_speaking',
+  },
+  {
+    id: 'ielts.speaking.part2.2',
+    type: 'long_turn',
+    level: 'B2',
+    exam: 'ielts_speaking',
+    prompt:
+      'Describe a place you have visited that left a strong impression on you. You should say: where the place is, when you visited it, what you did there, and explain why it left such a strong impression. You have 1 minute to prepare and should speak for 1-2 minutes.',
+    timeLimitSeconds: 120,
+    prepTimeSeconds: 60,
+    rubricId: 'ielts_speaking',
+  },
+  {
+    id: 'ielts.speaking.part2.3',
+    type: 'long_turn',
+    level: 'B2',
+    exam: 'ielts_speaking',
+    prompt:
+      'Describe a skill you would like to learn. You should say: what the skill is, why you want to learn it, how you would learn it, and explain how this skill would be useful to you. You have 1 minute to prepare and should speak for 1-2 minutes.',
+    timeLimitSeconds: 120,
+    prepTimeSeconds: 60,
+    rubricId: 'ielts_speaking',
+  },
+  {
+    id: 'ielts.speaking.part3.2',
+    type: 'discussion',
+    level: 'B2',
+    exam: 'ielts_speaking',
+    prompt:
+      'How important is it for people to travel and experience different cultures? Do you think tourism has more positive or negative effects on local communities? How might international travel change in the future?',
+    timeLimitSeconds: 120,
+    prepTimeSeconds: null,
+    rubricId: 'ielts_speaking',
+  },
+  {
+    id: 'ielts.speaking.part3.3',
+    type: 'discussion',
+    level: 'B2',
+    exam: 'ielts_speaking',
+    prompt:
+      'What skills do you think will be most important in the workplace in the future? Do you think formal education adequately prepares young people for working life? How can governments encourage lifelong learning?',
+    timeLimitSeconds: 120,
+    prepTimeSeconds: null,
+    rubricId: 'ielts_speaking',
+  },
+
+  // =========================================================================
   // PTE Speaking — Read Aloud
   // =========================================================================
   {

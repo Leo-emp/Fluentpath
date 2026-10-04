@@ -194,7 +194,7 @@ const WRITING: ExamSection = {
       id: 'task1',
       skill: 'writing',
       // # GT Task 1: letter writing (formal, semi-formal, or informal).
-      taskRef: 'ielts_gt.task1.letter.1',
+      taskRef: 'ielts.task1.gt.1',
       // # 20 minutes recommended (not enforced — total section time is).
       durationMinutes: 20,
       prepTimeSeconds: null,
@@ -205,7 +205,7 @@ const WRITING: ExamSection = {
       id: 'task2',
       skill: 'writing',
       // # Task 2: essay — identical to Academic.
-      taskRef: 'ielts.task2.essay.1',
+      taskRef: 'ielts.task2.1',
       durationMinutes: 40,
       prepTimeSeconds: null,
       nodeIds: ['cando.b2.write_essay', 'strat.ielts.task2_structure'],
@@ -229,7 +229,7 @@ const SPEAKING: ExamSection = {
     {
       id: 'part1',
       skill: 'speaking',
-      taskRef: 'ielts.part1.1',
+      taskRef: 'ielts.speaking.part1.1',
       durationMinutes: 5,
       prepTimeSeconds: null,
       nodeIds: ['cando.b1.describe_routine', 'strat.ielts.part1_answers'],
@@ -237,7 +237,7 @@ const SPEAKING: ExamSection = {
     {
       id: 'part2',
       skill: 'speaking',
-      taskRef: 'ielts.part2.1',
+      taskRef: 'ielts.speaking.part2.1',
       durationMinutes: 4,
       // # 60 seconds to read the cue card and prepare.
       prepTimeSeconds: 60,
@@ -246,7 +246,7 @@ const SPEAKING: ExamSection = {
     {
       id: 'part3',
       skill: 'speaking',
-      taskRef: 'ielts.part3.1',
+      taskRef: 'ielts.speaking.part3.1',
       durationMinutes: 5,
       prepTimeSeconds: null,
       nodeIds: ['cando.b2.discuss_abstract', 'strat.ielts.part3_extend'],

@@ -248,6 +248,74 @@ const TASKS: WritingTask[] = [
   },
 
   // -----------------------------------------------------------------------
+  // IELTS Task 1 — additional academic/GT variants for mock test rotation
+  // -----------------------------------------------------------------------
+  {
+    id: 'ielts.task1.academic.2',
+    type: 'report',
+    level: 'B2',
+    exam: 'ielts_task1',
+    prompt:
+      'The pie charts below show the proportion of energy generated from different sources in a country in 2000 and 2020. Summarise the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.',
+    minWords: 150,
+    maxWords: 250,
+    timeLimitMinutes: 20,
+    rubricId: 'ielts_task1',
+  },
+  {
+    id: 'ielts.task1.academic.3',
+    type: 'report',
+    level: 'B2',
+    exam: 'ielts_task1',
+    prompt:
+      'The table below shows the percentage of adults in five countries who used the internet for different purposes in 2023. Summarise the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.',
+    minWords: 150,
+    maxWords: 250,
+    timeLimitMinutes: 20,
+    rubricId: 'ielts_task1',
+  },
+  {
+    id: 'ielts.task1.gt.2',
+    type: 'letter',
+    level: 'B1',
+    exam: 'ielts_task1',
+    prompt:
+      'You have just moved to a new city and want to join a local sports club. Write a letter to the club secretary. In your letter: introduce yourself and explain your situation, ask about membership options, and enquire about training schedules and facilities. Write at least 150 words.',
+    minWords: 150,
+    maxWords: 250,
+    timeLimitMinutes: 20,
+    rubricId: 'ielts_task1',
+  },
+
+  // -----------------------------------------------------------------------
+  // IELTS Task 2 — additional essay variants for mock test rotation
+  // -----------------------------------------------------------------------
+  {
+    id: 'ielts.task2.3',
+    type: 'essay',
+    level: 'B2',
+    exam: 'ielts_task2',
+    prompt:
+      'Some people believe that universities should focus on providing academic knowledge, while others think they should also prepare students for the world of work. Discuss both views and give your own opinion. Give reasons for your answer and include any relevant examples. Write at least 250 words.',
+    minWords: 250,
+    maxWords: 350,
+    timeLimitMinutes: 40,
+    rubricId: 'ielts_task2',
+  },
+  {
+    id: 'ielts.task2.4',
+    type: 'essay',
+    level: 'B2',
+    exam: 'ielts_task2',
+    prompt:
+      'Many people today spend a large part of their free time using social media. Do the advantages of this outweigh the disadvantages? Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.',
+    minWords: 250,
+    maxWords: 350,
+    timeLimitMinutes: 40,
+    rubricId: 'ielts_task2',
+  },
+
+  // -----------------------------------------------------------------------
   // PTE Academic Written Essay
   // 200–300 words, 20 minutes
   // -----------------------------------------------------------------------

@@ -21,6 +21,10 @@ import { SEED_IELTS_LISTENING_EXPANDED } from './seed-ielts-listening-expanded'
 import { SEED_IELTS_WRITING_EXPANDED } from './seed-ielts-writing-expanded'
 import { SEED_IELTS_SPEAKING_EXPANDED } from './seed-ielts-speaking-expanded'
 import { SEED_IELTS_BAND9 } from './seed-ielts-band9'
+import { SEED_IELTS_READING_TEST2 } from './seed-ielts-reading-test2'
+import { SEED_IELTS_READING_TEST3 } from './seed-ielts-reading-test3'
+import { SEED_IELTS_LISTENING_TEST2 } from './seed-ielts-listening-test2'
+import { SEED_IELTS_LISTENING_TEST3 } from './seed-ielts-listening-test3'
 import { SEED_PTE_PREP } from './seed-pte-prep'
 import { SEED_PTE_EXPANDED } from './seed-pte-expanded'
 import { SEED_OET_PREP } from './seed-oet-prep'
@@ -121,6 +125,10 @@ export async function seedGraph(db: Db, now: number): Promise<void> {
     SEED_IELTS_WRITING_EXPANDED,
     SEED_IELTS_SPEAKING_EXPANDED,
     SEED_IELTS_BAND9,
+    SEED_IELTS_READING_TEST2,
+    SEED_IELTS_READING_TEST3,
+    SEED_IELTS_LISTENING_TEST2,
+    SEED_IELTS_LISTENING_TEST3,
     SEED_PTE_PREP,
     SEED_PTE_EXPANDED,
     SEED_OET_PREP,
